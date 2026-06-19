@@ -9,6 +9,7 @@ import { HealthModule } from './modules/health/health.module';
 import { IamModule } from './modules/iam/iam.module';
 import { CemeteryModule } from './modules/cemetery/cemetery.module';
 import { QuadraModule } from './modules/quadra/quadra.module';
+import { JazigoModule } from './modules/jazigo/jazigo.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { QuadraModule } from './modules/quadra/quadra.module';
     HealthModule,
     CemeteryModule,
     QuadraModule,
+    JazigoModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
