@@ -42,7 +42,7 @@ export class JazigoService {
       );
     }
 
-    const jazigo = await db.jazigo.create({ data: dto });
+    const jazigo = await db.jazigo.create({ data: dto as any });
 
     await this.audit.log({
       tenantId,

@@ -57,7 +57,7 @@ export class DocumentService {
         nomeArquivo: file.originalname,
         urlMinio: objectKey,
         emitidoPor: userId,
-      },
+      } as any,
     });
 
     await this.audit.log({
@@ -183,7 +183,7 @@ export class DocumentService {
         nomeArquivo: `certidao-${numeroRegistro}.pdf`,
         urlMinio: objectKey,
         emitidoPor: userId,
-      },
+      } as any,
     });
 
     await this.audit.log({

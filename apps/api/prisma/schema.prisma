@@ -69,9 +69,10 @@ model Tenant {
 model User {
   id         String    @id @default(uuid())
   tenantId   String    @map("tenant_id")
-  keycloakId String    @unique @map("keycloak_id")
+  keycloakId String?   @unique @map("keycloak_id")
   nome       String
   email      String
+  senha      String   @map("senha")
   perfil     UserRole
   ativo      Boolean   @default(true)
   criadoEm  DateTime   @default(now()) @map("criado_em")

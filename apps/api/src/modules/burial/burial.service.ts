@@ -30,7 +30,7 @@ export class BurialService {
     if (!falecido) throw new NotFoundException(`Falecido ${dto.falecidoId} não encontrado`);
     if (!jazigo) throw new NotFoundException(`Jazigo ${dto.jazigoId} não encontrado`);
 
-    if (![JazigoStatus.DISPONIVEL, JazigoStatus.RESERVADO].includes(jazigo.status as JazigoStatus)) {
+    if (!([JazigoStatus.DISPONIVEL, JazigoStatus.RESERVADO] as JazigoStatus[]).includes(jazigo.status)) {
       throw new ConflictException(
         `Jazigo está "${jazigo.status}" — só aceita inumação quando DISPONIVEL ou RESERVADO`,
       );
@@ -158,7 +158,7 @@ export class BurialService {
       );
     }
 
-    if (![JazigoStatus.DISPONIVEL, JazigoStatus.RESERVADO].includes(jazigoDestino.status as JazigoStatus)) {
+    if (!([JazigoStatus.DISPONIVEL, JazigoStatus.RESERVADO] as JazigoStatus[]).includes(jazigoDestino.status)) {
       throw new ConflictException(
         `Jazigo de destino está "${jazigoDestino.status}" — translado exige DISPONIVEL ou RESERVADO no destino`,
       );

@@ -22,7 +22,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   handleRequest(err: any, user: any) {
     if (err || !user) throw err ?? new UnauthorizedException('Token inválido ou ausente');
-    if (!user.tenantId) throw new UnauthorizedException('Token sem tenant_id');
     return user;
   }
 }

@@ -1,5 +1,6 @@
 import { PrismaClient, JazigoStatus, JazigoType, BurialType, DocumentType, EntityStatus, UserRole } from '@prisma/client';
 import { createCipheriv, createHash, randomBytes } from 'crypto';
+import { hashSync } from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -47,9 +48,9 @@ async function main() {
     data: {
       id: ADMIN_KEYCLOAK_ID,
       tenantId: TENANT_ID,
-      keycloakId: 'admin-test-keycloak-sub',
       nome: 'Admin Teste',
       email: 'admin@sigcem.local',
+      senha: hashSync('Admin@123', 12),
       perfil: UserRole.ADMIN,
       ativo: true,
     },

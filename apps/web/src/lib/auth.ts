@@ -1,23 +1,40 @@
 import type { NextAuthOptions } from 'next-auth';
-import KeycloakProvider from 'next-auth/providers/keycloak';
+import CredentialsProvider from 'next-auth/providers/credentials';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    KeycloakProvider({
-      clientId: process.env.KEYCLOAK_CLIENT_ID ?? 'sigcem-web',
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET ?? '',
-      issuer: `${process.env.NEXT_PUBLIC_KEYCLOAK_URL}/realms/${process.env.NEXT_PUBLIC_KEYCLOAK_REALM}`,
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'E-mail', type: 'email' },
+        senha: { label: 'Senha', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.senha) return null;
+
+        const res = await fetch(`${API_URL}/api/v1/iam/auth`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: credentials.email, senha: credentials.senha }),
+        });
+
+        if (!res.ok) return null;
+
+        const { accessToken, user } = await res.json();
+        return { id: user.sub, accessToken, ...user };
+      },
     }),
   ],
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-        token.idToken = account.id_token;
-        const p = profile as Record<string, unknown>;
-        token.tenantId = p?.tenant_id as string;
-        token.roles = (p?.realm_access as { roles?: string[] })?.roles ?? [];
+    async jwt({ token, user }) {
+      if (user) {
+        token.accessToken = (user as any).accessToken;
+        token.userId      = (user as any).sub;
+        token.tenantId    = (user as any).tenantId;
+        token.roles       = (user as any).roles;
+        token.name        = (user as any).name;
       }
       return token;
     },
@@ -25,17 +42,18 @@ export const authOptions: NextAuthOptions = {
       return {
         ...session,
         accessToken: token.accessToken,
-        tenantId: token.tenantId,
-        roles: token.roles,
+        userId:      token.userId,
+        tenantId:    token.tenantId,
+        roles:       token.roles,
       };
     },
   },
   pages: {
     signIn: '/login',
-    error: '/login',
+    error:  '/login',
   },
   session: {
     strategy: 'jwt',
-    maxAge: 3600,
+    maxAge: 8 * 60 * 60, // 8h — igual ao JWT da API
   },
 };

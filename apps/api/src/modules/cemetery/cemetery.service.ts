@@ -24,7 +24,7 @@ export class CemeteryService {
       throw new ConflictException(`Cemitério com nome "${dto.nome}" já existe`);
     }
 
-    const cemetery = await db.cemetery.create({ data: dto });
+    const cemetery = await db.cemetery.create({ data: dto as any });
 
     await this.audit.log({
       tenantId,

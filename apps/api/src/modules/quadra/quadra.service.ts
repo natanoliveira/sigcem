@@ -33,7 +33,7 @@ export class QuadraService {
       );
     }
 
-    const quadra = await db.quadra.create({ data: dto });
+    const quadra = await db.quadra.create({ data: dto as any });
 
     await this.audit.log({
       tenantId,
