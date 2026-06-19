@@ -8,6 +8,7 @@ import { RolesGuard } from '@shared/guards/roles.guard';
 import { HealthModule } from './modules/health/health.module';
 import { IamModule } from './modules/iam/iam.module';
 import { CemeteryModule } from './modules/cemetery/cemetery.module';
+import { QuadraModule } from './modules/quadra/quadra.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CemeteryModule } from './modules/cemetery/cemetery.module';
     IamModule,
     HealthModule,
     CemeteryModule,
+    QuadraModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
