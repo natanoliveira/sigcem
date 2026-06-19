@@ -1,0 +1,146 @@
+{
+  "realm": "sigcem",
+  "displayName": "SIGCEM",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "ADMIN", "description": "Administrador do sistema" },
+      { "name": "GESTOR", "description": "Gestor municipal" },
+      { "name": "OPERADOR", "description": "Operador cemiterial" },
+      { "name": "AGENTE_DOCUMENTAL", "description": "Agente documental" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "sigcem-api",
+      "name": "SIGCEM API",
+      "description": "Backend NestJS",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "change-me-in-production",
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "tenant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-roles-oidc-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "sigcem-web",
+      "name": "SIGCEM Web",
+      "description": "Frontend Next.js",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:3002/*",
+        "http://localhost:3002/api/auth/callback/keycloak"
+      ],
+      "webOrigins": [
+        "http://localhost:3002"
+      ],
+      "protocolMappers": [
+        {
+          "name": "tenant-id-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "realm-roles-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-roles-oidc-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "multivalued": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin-test",
+      "email": "admin@sigcem.local",
+      "firstName": "Admin",
+      "lastName": "Teste",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Admin@123", "temporary": false }],
+      "realmRoles": ["ADMIN"],
+      "attributes": { "tenant_id": ["00000000-0000-0000-0000-000000000001"] }
+    },
+    {
+      "username": "gestor-test",
+      "email": "gestor@sigcem.local",
+      "firstName": "Gestor",
+      "lastName": "Teste",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Gestor@123", "temporary": false }],
+      "realmRoles": ["GESTOR"],
+      "attributes": { "tenant_id": ["00000000-0000-0000-0000-000000000001"] }
+    },
+    {
+      "username": "operador-test",
+      "email": "operador@sigcem.local",
+      "firstName": "Operador",
+      "lastName": "Teste",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Operador@123", "temporary": false }],
+      "realmRoles": ["OPERADOR"],
+      "attributes": { "tenant_id": ["00000000-0000-0000-0000-000000000001"] }
+    }
+  ]
+}
