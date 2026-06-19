@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { FileText, Download, X, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -55,7 +56,7 @@ export function DocumentList({ entidadeTipo, entidadeId, allowUpload = true }: D
       const { url } = await api.get(`/api/v1/documents/${doc.id}/download`);
       window.open(url, '_blank');
     } catch {
-      alert('Erro ao gerar link de download.');
+      toast.error('Erro ao gerar link de download.');
     }
   }
 

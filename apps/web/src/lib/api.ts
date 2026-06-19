@@ -30,5 +30,7 @@ export const api = {
     request(path, { method: 'POST', body: JSON.stringify(data) }),
   patch: (path: string, data: unknown) =>
     request(path, { method: 'PATCH', body: JSON.stringify(data) }),
+  put: (path: string, data: unknown) =>
+    request(path, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (path: string) => request(path, { method: 'DELETE' }),
 };

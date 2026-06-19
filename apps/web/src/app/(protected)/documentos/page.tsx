@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Download, X, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const TIPO_LABEL: Record<string, string> = {
   CERTIFICATE: 'Certidão',
@@ -56,7 +58,7 @@ export default function DocumentosPage() {
       const { url } = await api.get(`/api/v1/documents/${doc.id}/download`);
       window.open(url, '_blank');
     } catch {
-      alert('Erro ao gerar link.');
+      toast.error('Erro ao gerar link.');
     }
   }
 
@@ -119,8 +121,12 @@ export default function DocumentosPage() {
                 ))
               ) : result?.data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-sm text-neutral-500">
-                    Nenhum documento encontrado.
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={FileText}
+                      title="Nenhum documento encontrado."
+                      description={!tipoFilter ? 'Os documentos gerados pelo sistema aparecerão aqui.' : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

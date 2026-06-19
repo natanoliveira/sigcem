@@ -3,11 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Eye, Building2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Cemetery {
   id: string;
@@ -127,8 +128,12 @@ export default function CemiteriosPage() {
                 ))
               ) : result?.data.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-neutral-500">
-                    {search ? 'Nenhum cemitério encontrado para esta busca.' : 'Nenhum cemitério cadastrado.'}
+                  <td colSpan={6}>
+                    <EmptyState
+                      icon={Building2}
+                      title={search ? 'Nenhum cemitério encontrado para esta busca.' : 'Nenhum cemitério cadastrado.'}
+                      description={!search ? "Clique em 'Novo cemitério' para começar." : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

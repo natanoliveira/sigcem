@@ -7,6 +7,7 @@ import { CryptoModule } from '@shared/crypto/crypto.module';
 import { StorageModule } from '@shared/storage/storage.module';
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard';
 import { RolesGuard } from '@shared/guards/roles.guard';
+import { PermissionsGuard } from '@shared/guards/permissions.guard';
 import { HealthModule } from './modules/health/health.module';
 import { IamModule } from './modules/iam/iam.module';
 import { CemeteryModule } from './modules/cemetery/cemetery.module';
@@ -17,6 +18,7 @@ import { BurialModule } from './modules/burial/burial.module';
 import { DocumentModule } from './modules/document/document.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { PublicModule } from './modules/public/public.module';
+import { GroupModule } from './modules/group/group.module';
 
 @Module({
   imports: [
@@ -35,10 +37,12 @@ import { PublicModule } from './modules/public/public.module';
     DocumentModule,
     AuditLogModule,
     PublicModule,
+    GroupModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
 })
 export class AppModule {}

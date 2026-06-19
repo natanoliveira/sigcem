@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Eye, MapPin } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const TIPO_LABEL: Record<string, string> = {
   SINGLE: 'Simples',
@@ -144,8 +145,12 @@ export default function JazigosPage() {
                 ))
               ) : result?.data.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-neutral-500">
-                    {search || statusFilter ? 'Nenhum jazigo encontrado com os filtros aplicados.' : 'Nenhum jazigo cadastrado.'}
+                  <td colSpan={7}>
+                    <EmptyState
+                      icon={MapPin}
+                      title={search || statusFilter ? 'Nenhum jazigo encontrado com os filtros aplicados.' : 'Nenhum jazigo cadastrado.'}
+                      description={!search && !statusFilter ? "Clique em 'Novo jazigo' para começar." : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

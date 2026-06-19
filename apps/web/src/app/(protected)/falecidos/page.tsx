@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, Trash2, Users } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Deceased {
   id: string;
@@ -122,8 +123,12 @@ export default function FalecidosPage() {
                 ))
               ) : result?.data.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-sm text-neutral-500">
-                    {search ? 'Nenhum registro encontrado.' : 'Nenhum falecido cadastrado.'}
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={Users}
+                      title={search ? 'Nenhum registro encontrado.' : 'Nenhum falecido cadastrado.'}
+                      description={!search ? "Clique em 'Registrar falecido' para começar." : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

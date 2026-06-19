@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { Spinner } from '@/components/ui/spinner';
 
 type BurialType = 'INHUMATION' | 'EXHUMATION' | 'TRANSFER';
 
@@ -61,7 +63,7 @@ export function BurialWizard() {
     notes: '',
   });
 
-  const [submitting, setSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
 
   async function searchDeceased(q: string) {
@@ -78,41 +80,44 @@ export function BurialWizard() {
     setJazigoResults(r.data ?? []);
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
+  function handleSubmit() {
     setError('');
-    try {
-      if (tipo === 'TRANSFER') {
-        await api.post('/api/v1/burials/transfer', {
-          deceasedId: falecido!.id,
-          sourceGraveId: jazigo!.id,
-          targetGraveId: jazigoDestino!.id,
-          eventDate: form.eventDate,
-          authorizedBy: form.authorizedBy,
-          funeralHome: form.funeralHome || undefined,
-          responsibleName: form.responsibleName || undefined,
-          notes: form.notes || undefined,
-        });
-      } else {
-        await api.post('/api/v1/burials', {
-          deceasedId: falecido!.id,
-          graveId: jazigo!.id,
-          type: tipo,
-          eventDate: form.eventDate,
-          authorizedBy: form.authorizedBy,
-          funeralHome: form.funeralHome || undefined,
-          responsibleName: form.responsibleName || undefined,
-          notes: form.notes || undefined,
-        });
+
+    startTransition(async () => {
+      try {
+        if (tipo === 'TRANSFER') {
+          await api.post('/api/v1/burials/transfer', {
+            deceasedId: falecido!.id,
+            sourceGraveId: jazigo!.id,
+            targetGraveId: jazigoDestino!.id,
+            eventDate: form.eventDate,
+            authorizedBy: form.authorizedBy,
+            funeralHome: form.funeralHome || undefined,
+            responsibleName: form.responsibleName || undefined,
+            notes: form.notes || undefined,
+          });
+        } else {
+          await api.post('/api/v1/burials', {
+            deceasedId: falecido!.id,
+            graveId: jazigo!.id,
+            type: tipo,
+            eventDate: form.eventDate,
+            authorizedBy: form.authorizedBy,
+            funeralHome: form.funeralHome || undefined,
+            responsibleName: form.responsibleName || undefined,
+            notes: form.notes || undefined,
+          });
+        }
+        toast.success('Sepultamento registrado com sucesso.');
+        router.push('/sepultamentos');
+        router.refresh();
+      } catch (err: any) {
+        const msg = err.message ?? 'Erro ao registrar';
+        setError(msg);
+        toast.error(msg);
+        setStep('confirmar');
       }
-      router.push('/sepultamentos');
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message ?? 'Erro ao registrar');
-      setStep('confirmar');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   // ── Step: Tipo ────────────────────────────────────────────────────────────
@@ -365,17 +370,17 @@ export function BurialWizard() {
       <div className="flex justify-end gap-3">
         <button
           onClick={() => setStep('detalhes')}
-          disabled={submitting}
+          disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
         >
           Voltar
         </button>
         <button
           onClick={handleSubmit}
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          disabled={isPending}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
         >
-          {submitting ? 'Registrando...' : `Confirmar ${typeConfig.label}`}
+          {isPending ? <><Spinner className="mr-2" />Registrando...</> : `Confirmar ${typeConfig.label}`}
         </button>
       </div>
     </div>

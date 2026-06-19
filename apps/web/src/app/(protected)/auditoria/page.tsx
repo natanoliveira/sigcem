@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const ACAO_CONFIG: Record<string, { label: string; className: string }> = {
   create:         { label: 'Criação',    className: 'bg-green-50 text-green-700 ring-green-600/20' },
@@ -153,8 +155,16 @@ export default function AuditoriaPage() {
             <div key={i} className="h-14 bg-white rounded-xl border border-neutral-200 animate-pulse" />
           ))
         ) : result?.data.length === 0 ? (
-          <div className="bg-white rounded-xl border border-neutral-200 px-4 py-12 text-center text-sm text-neutral-500">
-            Nenhum log encontrado com os filtros aplicados.
+          <div className="bg-white rounded-xl border border-neutral-200">
+            <EmptyState
+              icon={ClipboardList}
+              title="Nenhuma atividade registrada."
+              description={
+                filters.entidadeTipo || filters.acao || filters.dataInicio || filters.dataFim
+                  ? 'Tente ajustar os filtros aplicados.'
+                  : 'As operações realizadas no sistema aparecerão aqui.'
+              }
+            />
           </div>
         ) : (
           result?.data.map((log) => {

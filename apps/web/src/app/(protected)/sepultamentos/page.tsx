@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Eye } from 'lucide-react';
+import { Plus, Eye, Shovel } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const TIPO_CONFIG: Record<string, { label: string; className: string }> = {
   INHUMATION: { label: 'Inumação', className: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
@@ -109,8 +110,12 @@ export default function SepultamentosPage() {
                 ))
               ) : result?.data.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-sm text-neutral-500">
-                    Nenhum sepultamento registrado.
+                  <td colSpan={6}>
+                    <EmptyState
+                      icon={Shovel}
+                      title="Nenhum sepultamento registrado."
+                      description={!tipoFilter ? "Clique em 'Novo registro' para registrar uma operação." : undefined}
+                    />
                   </td>
                 </tr>
               ) : (

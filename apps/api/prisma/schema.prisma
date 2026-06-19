@@ -50,6 +50,25 @@ enum DocumentType {
   ATTACHMENT
 }
 
+enum SystemModule {
+  CEMETERIES
+  BLOCKS
+  GRAVES
+  DECEASED
+  BURIALS
+  DOCUMENTS
+  AUDIT
+  USERS
+  GROUPS
+}
+
+enum PermissionAction {
+  CREATE
+  VIEW
+  EDIT
+  DELETE
+}
+
 // ── Tenant ───────────────────────────────────────────────────────────────────
 
 model Tenant {
@@ -60,6 +79,7 @@ model Tenant {
   createdAt  DateTime    @default(now()) @map("created_at")
   users      User[]
   cemeteries Cemetery[]
+  groups     Group[]
 
   @@map("tenants")
 }
@@ -76,7 +96,8 @@ model User {
   role       UserRole
   active     Boolean   @default(true)
   createdAt  DateTime  @default(now()) @map("created_at")
-  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  groups     GroupMember[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -224,6 +245,45 @@ model Document {
 
   @@index([tenantId, entityType, entityId])
   @@map("documents")
+}
+
+// ── Group ─────────────────────────────────────────────────────────────────────
+
+model Group {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  name        String
+  description String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  members     GroupMember[]
+  permissions GroupPermission[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId String @map("group_id")
+  userId  String @map("user_id")
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("group_members")
+}
+
+model GroupPermission {
+  id      String             @id @default(uuid())
+  groupId String             @map("group_id")
+  module  SystemModule
+  actions PermissionAction[]
+  group   Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, module])
+  @@map("group_permissions")
 }
 
 // ── Audit Log ────────────────────────────────────────────────────────────────

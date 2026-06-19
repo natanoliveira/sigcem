@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { Spinner } from '@/components/ui/spinner';
 
 interface DeceasedFormData {
   fullName: string;
@@ -31,7 +33,7 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
   const roles: string[] = (session as any)?.roles ?? [];
   const canSeeSensitive = roles.some((r) => SENSITIVE_ROLES.includes(r));
 
-  const [submitting, setSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
   const [form, setForm] = useState<DeceasedFormData>({
     fullName: initialData?.fullName ?? '',
@@ -53,9 +55,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
     setError('');
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError('');
 
     const payload: any = {
@@ -74,19 +75,22 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
       if (form.causeOfDeath.trim()) payload.causeOfDeath = form.causeOfDeath.trim();
     }
 
-    try {
-      if (mode === 'create') {
-        await api.post('/api/v1/deceased', payload);
-      } else {
-        await api.patch(`/api/v1/deceased/${initialData!.id}`, payload);
+    startTransition(async () => {
+      try {
+        if (mode === 'create') {
+          await api.post('/api/v1/deceased', payload);
+        } else {
+          await api.patch(`/api/v1/deceased/${initialData!.id}`, payload);
+        }
+        toast.success('Falecido salvo com sucesso.');
+        router.push('/falecidos');
+        router.refresh();
+      } catch (err: any) {
+        const msg = err.message ?? 'Erro ao salvar';
+        setError(msg);
+        toast.error(msg);
       }
-      router.push('/falecidos');
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message ?? 'Erro ao salvar');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   return (
@@ -257,17 +261,17 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
         <button
           type="button"
           onClick={() => router.back()}
-          disabled={submitting}
+          disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          disabled={isPending}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
         >
-          {submitting ? 'Salvando...' : mode === 'create' ? 'Registrar falecido' : 'Salvar alterações'}
+          {isPending ? <><Spinner className="mr-2" />Salvando...</> : mode === 'create' ? 'Registrar falecido' : 'Salvar alterações'}
         </button>
       </div>
     </form>

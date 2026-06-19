@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { FileCheck, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { Spinner } from '@/components/ui/spinner';
 
 interface EmitCertificateButtonProps {
   burialId: string;
@@ -10,22 +12,24 @@ interface EmitCertificateButtonProps {
 }
 
 export function EmitCertificateButton({ burialId, onEmitted }: EmitCertificateButtonProps) {
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ url: string; numeroRegistro: string } | null>(null);
   const [error, setError] = useState('');
 
-  async function handleEmit() {
-    setLoading(true);
+  function handleEmit() {
     setError('');
-    try {
-      const data = await api.post('/api/v1/documents/certidao', { burialId });
-      setResult({ url: data.url, numeroRegistro: data.numeroRegistro });
-      onEmitted?.();
-    } catch (err: any) {
-      setError(err.message ?? 'Erro ao emitir certidão');
-    } finally {
-      setLoading(false);
-    }
+    startTransition(async () => {
+      try {
+        const data = await api.post('/api/v1/documents/certidao', { burialId });
+        setResult({ url: data.url, numeroRegistro: data.numeroRegistro });
+        toast.success('Certidão emitida com sucesso.');
+        onEmitted?.();
+      } catch (err: any) {
+        const msg = err.message ?? 'Erro ao emitir certidão';
+        setError(msg);
+        toast.error(msg);
+      }
+    });
   }
 
   if (result) {
@@ -56,11 +60,11 @@ export function EmitCertificateButton({ burialId, onEmitted }: EmitCertificateBu
       {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
       <button
         onClick={handleEmit}
-        disabled={loading}
+        disabled={isPending}
         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
       >
-        <FileCheck size={15} />
-        {loading ? 'Gerando certidão...' : 'Emitir certidão de sepultamento'}
+        {isPending ? <Spinner className="mr-1" /> : <FileCheck size={15} />}
+        {isPending ? 'Gerando certidão...' : 'Emitir certidão de sepultamento'}
       </button>
     </div>
   );

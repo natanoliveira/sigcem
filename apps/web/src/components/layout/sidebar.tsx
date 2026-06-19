@@ -8,6 +8,8 @@ import {
   Grid3x3,
   MapPin,
   Users,
+  Users2,
+  Shield,
   Shovel,
   FileText,
   ClipboardList,
@@ -45,6 +47,8 @@ const navGroups = [
     items: [
       { label: 'Documentos',    href: '/documentos',    icon: FileText },
       { label: 'Auditoria',     href: '/auditoria',     icon: ClipboardList },
+      { label: 'Usuários',      href: '/users',         icon: Users2 },
+      { label: 'Grupos',        href: '/groups',        icon: Shield },
       { label: 'Configurações', href: '/configuracoes', icon: Settings },
     ],
   },

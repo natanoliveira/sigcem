@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Eye, LayoutGrid } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Quadra {
   id: string;
@@ -120,8 +121,12 @@ export default function QuadrasPage() {
                 ))
               ) : result?.data.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-sm text-neutral-500">
-                    {search ? 'Nenhuma quadra encontrada para esta busca.' : 'Nenhuma quadra cadastrada.'}
+                  <td colSpan={7}>
+                    <EmptyState
+                      icon={LayoutGrid}
+                      title={search ? 'Nenhuma quadra encontrada para esta busca.' : 'Nenhuma quadra cadastrada.'}
+                      description={!search ? "Clique em 'Nova quadra' para começar." : undefined}
+                    />
                   </td>
                 </tr>
               ) : (
