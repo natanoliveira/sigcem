@@ -99,6 +99,7 @@ Serviços disponíveis:
 ```bash
 pnpm db:generate   # gera o Prisma Client
 pnpm db:migrate    # cria as tabelas no Neon
+pnpm db:seed       # popula com dados de teste
 ```
 
 ### 5. Rodar os apps
@@ -182,6 +183,7 @@ pnpm infra:down          # Derruba Docker Compose
 pnpm db:generate         # Gera Prisma Client
 pnpm db:migrate          # Cria/atualiza tabelas (dev)
 pnpm db:migrate:prod     # Aplica migrations em produção
+pnpm db:seed             # Popula o banco com dados de teste
 pnpm db:studio           # Abre Prisma Studio
 
 # Apps

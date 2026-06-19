@@ -14,8 +14,8 @@ dist/
 .next/
 out/
 
-# prisma
-apps/api/prisma/migrations/*.sql
+# prisma (migrations devem ser commitadas)
+apps/api/prisma/.env
 
 # logs
 *.log
