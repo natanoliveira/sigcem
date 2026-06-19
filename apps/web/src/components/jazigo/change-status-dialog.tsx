@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { Spinner } from '@/components/ui/spinner';
 
 type GraveStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'BLOCKED';
 
@@ -31,30 +33,33 @@ interface Props {
 export function ChangeStatusDialog({ open, jazigoId, currentStatus, onClose, onSuccess }: Props) {
   const [selectedStatus, setSelectedStatus] = useState<GraveStatus | ''>('');
   const [reason, setReason] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
 
   const allowed = ALLOWED[currentStatus] ?? [];
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedStatus) return;
-    setLoading(true);
     setError('');
-    try {
-      await api.patch(`/api/v1/graves/${jazigoId}/status`, {
-        status: selectedStatus,
-        reason: reason.trim() || undefined,
-      });
-      setSelectedStatus('');
-      setReason('');
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.message ?? 'Erro ao alterar status');
-    } finally {
-      setLoading(false);
-    }
+
+    startTransition(async () => {
+      try {
+        await api.patch(`/api/v1/graves/${jazigoId}/status`, {
+          status: selectedStatus,
+          reason: reason.trim() || undefined,
+        });
+        toast.success('Status do jazigo alterado com sucesso.');
+        setSelectedStatus('');
+        setReason('');
+        onSuccess();
+        onClose();
+      } catch (err: any) {
+        const msg = err.message ?? 'Erro ao alterar status';
+        setError(msg);
+        toast.error(msg);
+      }
+    });
   }
 
   if (!open) return null;
@@ -117,17 +122,17 @@ export function ChangeStatusDialog({ open, jazigoId, currentStatus, onClose, onS
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
+              disabled={isPending}
               className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={loading || !selectedStatus}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+              disabled={isPending || !selectedStatus}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
             >
-              {loading ? 'Salvando...' : 'Confirmar'}
+              {isPending ? <><Spinner className="mr-2" />Salvando...</> : 'Confirmar'}
             </button>
           </div>
         </form>

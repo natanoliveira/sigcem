@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Cemetery {
   id: string;
@@ -24,7 +26,7 @@ interface QuadraFormProps {
 
 export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormProps) {
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
   const [cemeteries, setCemeteries] = useState<Cemetery[]>([]);
   const [form, setForm] = useState<BlockFormData>({
@@ -45,9 +47,8 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
     setError('');
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError('');
 
     const payload = {
@@ -57,20 +58,23 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
       capacity: form.capacity ? parseInt(form.capacity, 10) : undefined,
     };
 
-    try {
-      if (mode === 'create') {
-        await api.post('/api/v1/blocks', payload);
-      } else {
-        const { cemeteryId: _, ...updatePayload } = payload;
-        await api.patch(`/api/v1/blocks/${initialData!.id}`, updatePayload);
+    startTransition(async () => {
+      try {
+        if (mode === 'create') {
+          await api.post('/api/v1/blocks', payload);
+        } else {
+          const { cemeteryId: _, ...updatePayload } = payload;
+          await api.patch(`/api/v1/blocks/${initialData!.id}`, updatePayload);
+        }
+        toast.success('Quadra salva com sucesso.');
+        router.push(fixedCemiterioId ? `/cemiterios/${fixedCemiterioId}` : '/quadras');
+        router.refresh();
+      } catch (err: any) {
+        const msg = err.message ?? 'Erro ao salvar';
+        setError(msg);
+        toast.error(msg);
       }
-      router.push(fixedCemiterioId ? `/cemiterios/${fixedCemiterioId}` : '/quadras');
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message ?? 'Erro ao salvar');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   }
 
   return (
@@ -152,17 +156,17 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
         <button
           type="button"
           onClick={() => router.back()}
-          disabled={submitting}
+          disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
         >
           Cancelar
         </button>
         <button
           type="submit"
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+          disabled={isPending}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
         >
-          {submitting ? 'Salvando...' : mode === 'create' ? 'Criar quadra' : 'Salvar alterações'}
+          {isPending ? <><Spinner className="mr-2" />Salvando...</> : mode === 'create' ? 'Criar quadra' : 'Salvar alterações'}
         </button>
       </div>
     </form>

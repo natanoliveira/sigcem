@@ -8,16 +8,16 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: 'E-mail', type: 'email' },
-        senha: { label: 'Senha', type: 'password' },
+        email:    { label: 'E-mail', type: 'email' },
+        password: { label: 'Senha', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.senha) return null;
+        if (!credentials?.email || !credentials?.password) return null;
 
         const res = await fetch(`${API_URL}/api/v1/iam/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: credentials.email, senha: credentials.senha }),
+          body: JSON.stringify({ email: credentials.email, password: credentials.password }),
         });
 
         if (!res.ok) return null;
@@ -33,6 +33,7 @@ export const authOptions: NextAuthOptions = {
         token.accessToken = (user as any).accessToken;
         token.userId      = (user as any).sub;
         token.tenantId    = (user as any).tenantId;
+        token.tenantName  = (user as any).tenantName;
         token.roles       = (user as any).roles;
         token.name        = (user as any).name;
       }
@@ -44,6 +45,7 @@ export const authOptions: NextAuthOptions = {
         accessToken: token.accessToken,
         userId:      token.userId,
         tenantId:    token.tenantId,
+        tenantName:  token.tenantName,
         roles:       token.roles,
       };
     },
@@ -54,6 +56,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 8 * 60 * 60, // 8h — igual ao JWT da API
+    maxAge: 8 * 60 * 60,
   },
 };

@@ -44,6 +44,7 @@ export class IamService {
   async auth(dto: AuthDto) {
     const user = await this.prisma.user.findFirst({
       where: { email: dto.email, active: true },
+      include: { tenant: { select: { name: true } } },
     });
 
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
@@ -51,11 +52,12 @@ export class IamService {
     }
 
     const payload = {
-      sub:      user.id,
-      email:    user.email,
-      name:     user.name,
-      tenantId: user.tenantId,
-      roles:    [user.role],
+      sub:        user.id,
+      email:      user.email,
+      name:       user.name,
+      tenantId:   user.tenantId,
+      tenantName: user.tenant.name,
+      roles:      [user.role],
     };
 
     const accessToken = sign(payload, this.jwtSecret, {
