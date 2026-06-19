@@ -15,6 +15,8 @@ import { JazigoModule } from './modules/jazigo/jazigo.module';
 import { DeceasedModule } from './modules/deceased/deceased.module';
 import { BurialModule } from './modules/burial/burial.module';
 import { DocumentModule } from './modules/document/document.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { PublicModule } from './modules/public/public.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { DocumentModule } from './modules/document/document.module';
     DeceasedModule,
     BurialModule,
     DocumentModule,
+    AuditLogModule,
+    PublicModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
