@@ -6,18 +6,18 @@ import { api } from '@/lib/api';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const TIPO_LABEL: Record<string, string> = {
-  CERTIDAO: 'Certidão',
-  AUTORIZACAO: 'Autorização',
-  FOTOGRAFIA: 'Fotografia',
-  ANEXO: 'Anexo',
+  CERTIFICATE: 'Certidão',
+  AUTHORIZATION: 'Autorização',
+  PHOTO: 'Fotografia',
+  ATTACHMENT: 'Anexo',
 };
 
 interface Document {
   id: string;
-  tipo: string;
-  nomeArquivo: string;
-  emitidoEm: string;
-  emitidoPor: string;
+  type: string;
+  fileName: string;
+  issuedAt: string;
+  issuedBy: string;
 }
 
 interface DocumentListProps {
@@ -38,7 +38,7 @@ export function DocumentList({ entidadeTipo, entidadeId, allowUpload = true }: D
     setLoading(true);
     try {
       const r = await api.get(
-        `/api/v1/documents?entidadeTipo=${entidadeTipo}&entidadeId=${entidadeId}&limit=50`,
+        `/api/v1/documents?entityType=${entidadeTipo}&entityId=${entidadeId}&limit=50`,
       );
       setDocuments(r.data ?? []);
     } catch {
@@ -72,7 +72,7 @@ export function DocumentList({ entidadeTipo, entidadeId, allowUpload = true }: D
       const { getSession } = await import('next-auth/react');
       const session = await getSession() as any;
       const res = await fetch(
-        `/api/v1/documents/upload?entidadeTipo=${entidadeTipo}&entidadeId=${entidadeId}&tipo=ANEXO`,
+        `/api/v1/documents/upload?entityType=${entidadeTipo}&entityId=${entidadeId}&type=ATTACHMENT`,
         {
           method: 'POST',
           headers: session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {},
@@ -121,10 +121,10 @@ export function DocumentList({ entidadeTipo, entidadeId, allowUpload = true }: D
             <li key={doc.id} className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg">
               <FileText size={16} className="text-neutral-400 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-neutral-900 truncate">{doc.nomeArquivo}</p>
+                <p className="text-sm font-medium text-neutral-900 truncate">{doc.fileName}</p>
                 <p className="text-xs text-neutral-500">
-                  {TIPO_LABEL[doc.tipo] ?? doc.tipo} ·{' '}
-                  {new Date(doc.emitidoEm).toLocaleDateString('pt-BR')}
+                  {TIPO_LABEL[doc.type] ?? doc.type} ·{' '}
+                  {new Date(doc.issuedAt).toLocaleDateString('pt-BR')}
                 </p>
               </div>
               <button
@@ -173,7 +173,7 @@ export function DocumentList({ entidadeTipo, entidadeId, allowUpload = true }: D
       <ConfirmDialog
         open={!!inativarTarget}
         title="Remover documento"
-        description={`Tem certeza que deseja remover "${inativarTarget?.nomeArquivo}"?`}
+        description={`Tem certeza que deseja remover "${inativarTarget?.fileName}"?`}
         confirmLabel="Remover"
         onConfirm={handleInativar}
         onCancel={() => setInativarTarget(null)}

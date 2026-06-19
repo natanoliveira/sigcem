@@ -2,10 +2,10 @@ import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EntityStatus } from '@prisma/client';
 
-export class QueryQuadraDto {
+export class QueryBlockDto {
   @IsString()
   @IsOptional()
-  cemiterioId?: string;
+  cemeteryId?: string;
 
   @IsEnum(EntityStatus)
   @IsOptional()

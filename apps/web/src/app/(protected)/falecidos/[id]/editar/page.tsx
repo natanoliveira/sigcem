@@ -34,11 +34,11 @@ export default async function EditarFalecidoPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Editar registro"
-        description={deceased.nomeCompleto}
+        description={deceased.fullName}
         breadcrumbs={[
           { label: 'Cadastros' },
           { label: 'Falecidos', href: '/falecidos' },
-          { label: deceased.nomeCompleto, href: `/falecidos/${id}` },
+          { label: deceased.fullName, href: `/falecidos/${id}` },
           { label: 'Editar' },
         ]}
       />
@@ -46,16 +46,16 @@ export default async function EditarFalecidoPage({ params }: Props) {
         mode="edit"
         initialData={{
           id: deceased.id,
-          nomeCompleto: deceased.nomeCompleto,
-          dataNascimento: toInputDate(deceased.dataNascimento),
-          dataFalecimento: toInputDate(deceased.dataFalecimento),
+          fullName: deceased.fullName,
+          birthDate: toInputDate(deceased.birthDate),
+          deathDate: toInputDate(deceased.deathDate),
           cpf: deceased.cpf ?? '',
-          causaMortis: deceased.causaMortis ?? '',
-          naturalidade: deceased.naturalidade ?? '',
-          nacionalidade: deceased.nacionalidade ?? '',
-          nomePai: deceased.nomePai ?? '',
-          nomeMae: deceased.nomeMae ?? '',
-          observacoes: deceased.observacoes ?? '',
+          causeOfDeath: deceased.causeOfDeath ?? '',
+          birthPlace: deceased.birthPlace ?? '',
+          nationality: deceased.nationality ?? '',
+          fatherName: deceased.fatherName ?? '',
+          motherName: deceased.motherName ?? '',
+          notes: deceased.notes ?? '',
         }}
       />
     </div>

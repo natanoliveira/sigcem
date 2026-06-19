@@ -8,7 +8,7 @@ import { Pencil } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 
-const SENSITIVE_ROLES = ['ADMIN', 'GESTOR'];
+const SENSITIVE_ROLES = ['ADMIN', 'MANAGER'];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', {
@@ -18,17 +18,17 @@ function formatDate(iso: string) {
 
 interface Deceased {
   id: string;
-  nomeCompleto: string;
-  dataNascimento: string;
-  dataFalecimento: string;
+  fullName: string;
+  birthDate: string;
+  deathDate: string;
   cpf?: string | null;
-  causaMortis?: string | null;
-  naturalidade?: string | null;
-  nacionalidade?: string | null;
-  nomePai?: string | null;
-  nomeMae?: string | null;
-  observacoes?: string | null;
-  criadoEm: string;
+  causeOfDeath?: string | null;
+  birthPlace?: string | null;
+  nationality?: string | null;
+  fatherName?: string | null;
+  motherName?: string | null;
+  notes?: string | null;
+  createdAt: string;
 }
 
 function Field({ label, value }: { label: string; value?: string | null }) {
@@ -77,11 +77,11 @@ export default function DetalheDeceasedPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={deceased.nomeCompleto}
+        title={deceased.fullName}
         breadcrumbs={[
           { label: 'Cadastros' },
           { label: 'Falecidos', href: '/falecidos' },
-          { label: deceased.nomeCompleto },
+          { label: deceased.fullName },
         ]}
         action={
           <Link
@@ -98,16 +98,16 @@ export default function DetalheDeceasedPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 p-6">
           <h2 className="text-sm font-semibold text-neutral-900 mb-4">Dados pessoais</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Data de nascimento" value={formatDate(deceased.dataNascimento)} />
-            <Field label="Data de falecimento" value={formatDate(deceased.dataFalecimento)} />
-            <Field label="Naturalidade" value={deceased.naturalidade} />
-            <Field label="Nacionalidade" value={deceased.nacionalidade} />
-            <Field label="Nome do pai" value={deceased.nomePai} />
-            <Field label="Nome da mãe" value={deceased.nomeMae} />
-            {deceased.observacoes && (
+            <Field label="Data de nascimento" value={formatDate(deceased.birthDate)} />
+            <Field label="Data de falecimento" value={formatDate(deceased.deathDate)} />
+            <Field label="Naturalidade" value={deceased.birthPlace} />
+            <Field label="Nacionalidade" value={deceased.nationality} />
+            <Field label="Nome do pai" value={deceased.fatherName} />
+            <Field label="Nome da mãe" value={deceased.motherName} />
+            {deceased.notes && (
               <div className="sm:col-span-2">
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Observações</dt>
-                <dd className="mt-1 text-sm text-neutral-600">{deceased.observacoes}</dd>
+                <dd className="mt-1 text-sm text-neutral-600">{deceased.notes}</dd>
               </div>
             )}
           </dl>
@@ -133,7 +133,7 @@ export default function DetalheDeceasedPage() {
                 <div>
                   <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Causa mortis</dt>
                   <dd className="mt-1 text-sm text-neutral-900">
-                    {deceased.causaMortis ?? <span className="text-neutral-400">Não informada</span>}
+                    {deceased.causeOfDeath ?? <span className="text-neutral-400">Não informada</span>}
                   </dd>
                 </div>
               </dl>
@@ -152,7 +152,7 @@ export default function DetalheDeceasedPage() {
 
           <div className="bg-white rounded-xl border border-neutral-200 p-4">
             <p className="text-xs text-neutral-500">
-              Cadastrado em {formatDate(deceased.criadoEm)}
+              Cadastrado em {formatDate(deceased.createdAt)}
             </p>
           </div>
         </div>

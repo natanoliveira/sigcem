@@ -6,7 +6,7 @@ import { CreateDeceasedDto } from './dto/create-deceased.dto';
 import { UpdateDeceasedDto } from './dto/update-deceased.dto';
 import { QueryDeceasedDto } from './dto/query-deceased.dto';
 
-const SENSITIVE_ROLES = ['ADMIN', 'GESTOR'];
+const SENSITIVE_ROLES = ['ADMIN', 'MANAGER'];
 
 @Injectable()
 export class DeceasedService {
@@ -17,26 +17,26 @@ export class DeceasedService {
   ) {}
 
   async create(dto: CreateDeceasedDto, tenantId: string, userId: string, ip?: string) {
-    const { cpf, causaMortis, ...rest } = dto;
+    const { cpf, causeOfDeath, ...rest } = dto;
 
     const data: any = {
       ...rest,
-      dataNascimento: new Date(dto.dataNascimento),
-      dataFalecimento: new Date(dto.dataFalecimento),
+      birthDate: new Date(dto.birthDate),
+      deathDate: new Date(dto.deathDate),
     };
 
-    if (cpf) data.cpfHash = this.crypto.encrypt(cpf);
-    if (causaMortis) data.causaMortisEnc = this.crypto.encrypt(causaMortis);
+    if (cpf) data.taxIdHash = this.crypto.encrypt(cpf);
+    if (causeOfDeath) data.causeOfDeathEnc = this.crypto.encrypt(causeOfDeath);
 
     const deceased = await this.prisma.forTenant(tenantId).deceased.create({ data });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'create',
-      entidadeTipo: 'Deceased',
-      entidadeId: deceased.id,
-      dadosNovos: { ...rest, cpf: cpf ? '[PROTEGIDO]' : undefined },
+      userId,
+      action: 'create',
+      entityType: 'Deceased',
+      entityId: deceased.id,
+      newData: { ...rest, cpf: cpf ? '[PROTEGIDO]' : undefined },
       ip,
     });
 
@@ -45,17 +45,17 @@ export class DeceasedService {
 
   async findAll(query: QueryDeceasedDto, tenantId: string) {
     const db = this.prisma.forTenant(tenantId);
-    const { search, dataFalecimentoInicio, dataFalecimentoFim, page = 1, limit = 20 } = query;
+    const { search, deathDateStart, deathDateEnd, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (search) {
-      where.nomeCompleto = { contains: search, mode: 'insensitive' };
+      where.fullName = { contains: search, mode: 'insensitive' };
     }
-    if (dataFalecimentoInicio || dataFalecimentoFim) {
-      where.dataFalecimento = {};
-      if (dataFalecimentoInicio) where.dataFalecimento.gte = new Date(dataFalecimentoInicio);
-      if (dataFalecimentoFim) where.dataFalecimento.lte = new Date(dataFalecimentoFim);
+    if (deathDateStart || deathDateEnd) {
+      where.deathDate = {};
+      if (deathDateStart) where.deathDate.gte = new Date(deathDateStart);
+      if (deathDateEnd) where.deathDate.lte = new Date(deathDateEnd);
     }
 
     const [data, total] = await Promise.all([
@@ -63,15 +63,15 @@ export class DeceasedService {
         where,
         skip,
         take: limit,
-        orderBy: { nomeCompleto: 'asc' },
+        orderBy: { fullName: 'asc' },
         select: {
           id: true,
-          nomeCompleto: true,
-          dataNascimento: true,
-          dataFalecimento: true,
-          naturalidade: true,
-          nacionalidade: true,
-          criadoEm: true,
+          fullName: true,
+          birthDate: true,
+          deathDate: true,
+          birthPlace: true,
+          nationality: true,
+          createdAt: true,
         },
       }),
       db.deceased.count({ where }),
@@ -94,14 +94,14 @@ export class DeceasedService {
     const canSeeSensitive = userRoles.some((r) => SENSITIVE_ROLES.includes(r));
 
     // T-026 — audit de acesso a dados sensíveis
-    if (canSeeSensitive && (deceased.cpfHash || deceased.causaMortisEnc)) {
+    if (canSeeSensitive && (deceased.taxIdHash || deceased.causeOfDeathEnc)) {
       await this.audit.log({
         tenantId,
-        usuarioId: userId,
-        acao: 'view_sensitive',
-        entidadeTipo: 'Deceased',
-        entidadeId: id,
-        dadosNovos: { campos: ['cpf', 'causaMortis'], perfil: userRoles },
+        userId,
+        action: 'view_sensitive',
+        entityType: 'Deceased',
+        entityId: id,
+        newData: { campos: ['cpf', 'causeOfDeath'], perfil: userRoles },
         ip,
       });
     }
@@ -120,24 +120,24 @@ export class DeceasedService {
     const current = await db.deceased.findFirst({ where: { id } });
     if (!current) throw new NotFoundException(`Falecido ${id} não encontrado`);
 
-    const { cpf, causaMortis, ...rest } = dto;
+    const { cpf, causeOfDeath, ...rest } = dto;
 
     const data: any = { ...rest };
-    if (dto.dataNascimento) data.dataNascimento = new Date(dto.dataNascimento);
-    if (dto.dataFalecimento) data.dataFalecimento = new Date(dto.dataFalecimento);
-    if (cpf !== undefined) data.cpfHash = cpf ? this.crypto.encrypt(cpf) : null;
-    if (causaMortis !== undefined) data.causaMortisEnc = causaMortis ? this.crypto.encrypt(causaMortis) : null;
+    if (dto.birthDate) data.birthDate = new Date(dto.birthDate);
+    if (dto.deathDate) data.deathDate = new Date(dto.deathDate);
+    if (cpf !== undefined) data.taxIdHash = cpf ? this.crypto.encrypt(cpf) : null;
+    if (causeOfDeath !== undefined) data.causeOfDeathEnc = causeOfDeath ? this.crypto.encrypt(causeOfDeath) : null;
 
     const updated = await db.deceased.update({ where: { id }, data });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'update',
-      entidadeTipo: 'Deceased',
-      entidadeId: id,
-      dadosAnteriores: this.sanitize(current, []),
-      dadosNovos: this.sanitize(updated, []),
+      userId,
+      action: 'update',
+      entityType: 'Deceased',
+      entityId: id,
+      previousData: this.sanitize(current, []),
+      newData: this.sanitize(updated, []),
       ip,
     });
 
@@ -153,25 +153,25 @@ export class DeceasedService {
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'delete',
-      entidadeTipo: 'Deceased',
-      entidadeId: id,
-      dadosAnteriores: this.sanitize(current, []),
+      userId,
+      action: 'delete',
+      entityType: 'Deceased',
+      entityId: id,
+      previousData: this.sanitize(current, []),
       ip,
     });
   }
 
   private sanitize(deceased: any, roles: string[]) {
     const canSeeSensitive = roles.some((r) => SENSITIVE_ROLES.includes(r));
-    const { cpfHash, causaMortisEnc, ...safe } = deceased;
+    const { taxIdHash, causeOfDeathEnc, ...safe } = deceased;
 
     if (!canSeeSensitive) return safe;
 
     return {
       ...safe,
-      cpf: cpfHash ? this.crypto.decrypt(cpfHash) : null,
-      causaMortis: causaMortisEnc ? this.crypto.decrypt(causaMortisEnc) : null,
+      cpf: taxIdHash ? this.crypto.decrypt(taxIdHash) : null,
+      causeOfDeath: causeOfDeathEnc ? this.crypto.decrypt(causeOfDeathEnc) : null,
     };
   }
 }

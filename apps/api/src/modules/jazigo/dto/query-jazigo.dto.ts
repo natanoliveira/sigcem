@@ -1,23 +1,23 @@
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { JazigoStatus, JazigoType } from '@prisma/client';
+import { GraveStatus, GraveType } from '@prisma/client';
 
-export class QueryJazigoDto {
+export class QueryGraveDto {
   @IsString()
   @IsOptional()
-  quadraId?: string;
+  blockId?: string;
 
   @IsString()
   @IsOptional()
-  cemiterioId?: string;
+  cemeteryId?: string;
 
-  @IsEnum(JazigoStatus)
+  @IsEnum(GraveStatus)
   @IsOptional()
-  status?: JazigoStatus;
+  status?: GraveStatus;
 
-  @IsEnum(JazigoType)
+  @IsEnum(GraveType)
   @IsOptional()
-  tipo?: JazigoType;
+  type?: GraveType;
 
   @IsString()
   @IsOptional()

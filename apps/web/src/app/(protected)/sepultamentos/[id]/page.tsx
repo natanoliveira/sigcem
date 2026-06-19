@@ -9,9 +9,9 @@ import { EmitCertificateButton } from '@/components/document/emit-certificate-bu
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 const TIPO_CONFIG: Record<string, { label: string; className: string }> = {
-  INUMACAO: { label: 'Inumação', className: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
-  EXUMACAO: { label: 'Exumação', className: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
-  TRANSLADO: { label: 'Translado', className: 'bg-purple-50 text-purple-700 ring-purple-600/20' },
+  INHUMATION: { label: 'Inumação', className: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
+  EXHUMATION: { label: 'Exumação', className: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
+  TRANSFER: { label: 'Translado', className: 'bg-purple-50 text-purple-700 ring-purple-600/20' },
 };
 
 async function getBurial(id: string, token: string) {
@@ -50,7 +50,7 @@ export default async function DetalheSepultamentoPage({ params }: Props) {
 
   if (!burial) notFound();
 
-  const cfg = TIPO_CONFIG[burial.tipo] ?? TIPO_CONFIG.INUMACAO;
+  const cfg = TIPO_CONFIG[burial.type] ?? TIPO_CONFIG.INHUMATION;
 
   return (
     <div className="space-y-6">
@@ -59,7 +59,7 @@ export default async function DetalheSepultamentoPage({ params }: Props) {
         breadcrumbs={[
           { label: 'Operação' },
           { label: 'Sepultamentos', href: '/sepultamentos' },
-          { label: burial.falecido.nomeCompleto },
+          { label: burial.deceased.fullName },
         ]}
       />
 
@@ -69,18 +69,18 @@ export default async function DetalheSepultamentoPage({ params }: Props) {
             <span className={`inline-flex items-center rounded-md px-3 py-1 text-sm font-semibold ring-1 ring-inset ${cfg.className}`}>
               {cfg.label}
             </span>
-            <span className="text-sm text-neutral-500">{formatDate(burial.dataEvento)}</span>
+            <span className="text-sm text-neutral-500">{formatDate(burial.eventDate)}</span>
           </div>
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Falecido</dt>
               <dd className="mt-1">
-                <Link href={`/falecidos/${burial.falecido.id}`} className="text-sm font-medium text-primary-600 hover:underline">
-                  {burial.falecido.nomeCompleto}
+                <Link href={`/falecidos/${burial.deceased.id}`} className="text-sm font-medium text-primary-600 hover:underline">
+                  {burial.deceased.fullName}
                 </Link>
                 <span className="text-xs text-neutral-500 ml-2">
-                  Falecido em {formatDate(burial.falecido.dataFalecimento)}
+                  Falecido em {formatDate(burial.deceased.deathDate)}
                 </span>
               </dd>
             </div>
@@ -88,22 +88,22 @@ export default async function DetalheSepultamentoPage({ params }: Props) {
             <div className="sm:col-span-2">
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Jazigo</dt>
               <dd className="mt-1">
-                <Link href={`/jazigos/${burial.jazigo.id}`} className="text-sm font-mono font-medium text-primary-600 hover:underline">
-                  {burial.jazigo.codigo}
+                <Link href={`/jazigos/${burial.grave.id}`} className="text-sm font-mono font-medium text-primary-600 hover:underline">
+                  {burial.grave.code}
                 </Link>
                 <span className="text-xs text-neutral-500 ml-2">
-                  — {burial.jazigo.quadra.cemiterio.nome}, Quadra {burial.jazigo.quadra.codigo}
+                  — {burial.grave.block.cemetery.name}, Quadra {burial.grave.block.code}
                 </span>
               </dd>
             </div>
 
-            <Field label="Autorizado por" value={burial.autorizadoPor} />
-            <Field label="Funerária" value={burial.funeraria} />
-            <Field label="Responsável familiar" value={burial.responsavelNome} />
-            {burial.observacoes && (
+            <Field label="Autorizado por" value={burial.authorizedBy} />
+            <Field label="Funerária" value={burial.funeralHome} />
+            <Field label="Responsável familiar" value={burial.responsibleName} />
+            {burial.notes && (
               <div className="sm:col-span-2">
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Observações</dt>
-                <dd className="mt-1 text-sm text-neutral-600">{burial.observacoes}</dd>
+                <dd className="mt-1 text-sm text-neutral-600">{burial.notes}</dd>
               </div>
             )}
           </dl>
@@ -115,27 +115,27 @@ export default async function DetalheSepultamentoPage({ params }: Props) {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-neutral-500">Código</span>
-                <Link href={`/jazigos/${burial.jazigo.id}`} className="font-mono text-primary-600 hover:underline">
-                  {burial.jazigo.codigo}
+                <Link href={`/jazigos/${burial.grave.id}`} className="font-mono text-primary-600 hover:underline">
+                  {burial.grave.code}
                 </Link>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-500">Status atual</span>
-                <span className="font-medium text-neutral-900">{burial.jazigo.status}</span>
+                <span className="font-medium text-neutral-900">{burial.grave.status}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-500">Tipo</span>
-                <span className="text-neutral-700">{burial.jazigo.tipo}</span>
+                <span className="text-neutral-700">{burial.grave.type}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-xl border border-neutral-200 p-5">
             <p className="text-xs text-neutral-500 mb-3">
-              Registrado em {formatDate(burial.criadoEm)}
+              Registrado em {formatDate(burial.createdAt)}
             </p>
             {/* T-040 — emissão de certidão */}
-            {burial.tipo === 'INUMACAO' && (
+            {burial.type === 'INHUMATION' && (
               <EmitCertificateButton burialId={burial.id} />
             )}
           </div>

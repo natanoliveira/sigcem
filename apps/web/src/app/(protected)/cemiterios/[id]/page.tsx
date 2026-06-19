@@ -28,18 +28,18 @@ export default async function DetalheCemiterioPage({ params }: Props) {
 
   if (!cemetery) notFound();
 
-  const createdAt = new Date(cemetery.criadoEm).toLocaleDateString('pt-BR', {
+  const createdAt = new Date(cemetery.createdAt).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={cemetery.nome}
+        title={cemetery.name}
         breadcrumbs={[
           { label: 'Estrutura' },
           { label: 'Cemitérios', href: '/cemiterios' },
-          { label: cemetery.nome },
+          { label: cemetery.name },
         ]}
         action={
           <Link
@@ -66,12 +66,12 @@ export default async function DetalheCemiterioPage({ params }: Props) {
             </div>
             <div className="sm:col-span-2">
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Endereço</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{cemetery.endereco}</dd>
+              <dd className="mt-1 text-sm text-neutral-900">{cemetery.address}</dd>
             </div>
-            {cemetery.bairro && (
+            {cemetery.neighborhood && (
               <div>
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Bairro</dt>
-                <dd className="mt-1 text-sm text-neutral-900">{cemetery.bairro}</dd>
+                <dd className="mt-1 text-sm text-neutral-900">{cemetery.neighborhood}</dd>
               </div>
             )}
             {cemetery.areaM2 != null && (
@@ -82,11 +82,11 @@ export default async function DetalheCemiterioPage({ params }: Props) {
                 </dd>
               </div>
             )}
-            {cemetery.capacidade != null && (
+            {cemetery.capacity != null && (
               <div>
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Capacidade</dt>
                 <dd className="mt-1 text-sm text-neutral-900">
-                  {cemetery.capacidade.toLocaleString('pt-BR')} jazigos
+                  {cemetery.capacity.toLocaleString('pt-BR')} jazigos
                 </dd>
               </div>
             )}
@@ -95,7 +95,7 @@ export default async function DetalheCemiterioPage({ params }: Props) {
 
         <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <h2 className="text-sm font-semibold text-neutral-900 mb-4">Quadras</h2>
-          {cemetery.quadras?.length === 0 ? (
+          {cemetery.blocks?.length === 0 ? (
             <div className="text-center py-6">
               <Grid3x3 size={28} className="mx-auto text-neutral-300 mb-2" />
               <p className="text-xs text-neutral-500">Nenhuma quadra cadastrada</p>
@@ -108,13 +108,13 @@ export default async function DetalheCemiterioPage({ params }: Props) {
             </div>
           ) : (
             <ul className="space-y-2">
-              {cemetery.quadras?.map((q: any) => (
+              {cemetery.blocks?.map((q: any) => (
                 <li key={q.id}>
                   <Link
                     href={`/quadras/${q.id}`}
                     className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 transition-colors"
                   >
-                    <span className="text-sm font-medium text-neutral-900">{q.codigo}</span>
+                    <span className="text-sm font-medium text-neutral-900">{q.code}</span>
                     <StatusBadge status={q.status} />
                   </Link>
                 </li>

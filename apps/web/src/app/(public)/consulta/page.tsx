@@ -14,10 +14,10 @@ interface Localizacao {
 
 interface Falecido {
   id: string;
-  nomeCompleto: string;
-  dataNascimento: string;
-  dataFalecimento: string;
-  naturalidade: string | null;
+  fullName: string;
+  birthDate: string;
+  deathDate: string;
+  birthPlace: string | null;
   localizacao: Localizacao | null;
 }
 
@@ -100,21 +100,21 @@ export default function ConsultaPublicaPage() {
               </p>
               {result?.data.map((f) => (
                 <div key={f.id} className="bg-white rounded-xl border border-neutral-200 p-5">
-                  <h2 className="text-base font-semibold text-neutral-900">{f.nomeCompleto}</h2>
+                  <h2 className="text-base font-semibold text-neutral-900">{f.fullName}</h2>
 
                   <div className="flex flex-wrap gap-4 mt-2">
                     <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                       <Calendar size={13} />
-                      <span>Nascimento: {formatDate(f.dataNascimento)}</span>
+                      <span>Nascimento: {formatDate(f.birthDate)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                       <Calendar size={13} />
-                      <span>Falecimento: {formatDate(f.dataFalecimento)}</span>
+                      <span>Falecimento: {formatDate(f.deathDate)}</span>
                     </div>
-                    {f.naturalidade && (
+                    {f.birthPlace && (
                       <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                         <MapPin size={13} />
-                        <span>{f.naturalidade}</span>
+                        <span>{f.birthPlace}</span>
                       </div>
                     )}
                   </div>

@@ -7,7 +7,7 @@ import { QuadraForm } from '@/components/quadra/quadra-form';
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function getQuadra(id: string, token: string) {
-  const res = await fetch(`${API_URL}/api/v1/quadras/${id}`, {
+  const res = await fetch(`${API_URL}/api/v1/blocks/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
@@ -30,11 +30,11 @@ export default async function EditarQuadraPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Editar quadra"
-        description={`${quadra.codigo}${quadra.nome ? ` — ${quadra.nome}` : ''}`}
+        description={`${quadra.code}${quadra.name ? ` — ${quadra.name}` : ''}`}
         breadcrumbs={[
           { label: 'Estrutura' },
           { label: 'Quadras', href: '/quadras' },
-          { label: quadra.codigo, href: `/quadras/${id}` },
+          { label: quadra.code, href: `/quadras/${id}` },
           { label: 'Editar' },
         ]}
       />
@@ -42,10 +42,10 @@ export default async function EditarQuadraPage({ params }: Props) {
         mode="edit"
         initialData={{
           id: quadra.id,
-          cemiterioId: quadra.cemiterioId,
-          codigo: quadra.codigo,
-          nome: quadra.nome ?? '',
-          capacidade: quadra.capacidade != null ? String(quadra.capacidade) : '',
+          cemeteryId: quadra.cemeteryId,
+          code: quadra.code,
+          name: quadra.name ?? '',
+          capacity: quadra.capacity != null ? String(quadra.capacity) : '',
         }}
       />
     </div>

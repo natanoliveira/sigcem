@@ -13,10 +13,10 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JazigoService } from './jazigo.service';
-import { CreateJazigoDto } from './dto/create-jazigo.dto';
-import { UpdateJazigoDto } from './dto/update-jazigo.dto';
-import { QueryJazigoDto } from './dto/query-jazigo.dto';
-import { ChangeStatusJazigoDto } from './dto/change-status-jazigo.dto';
+import { CreateGraveDto } from './dto/create-jazigo.dto';
+import { UpdateGraveDto } from './dto/update-jazigo.dto';
+import { QueryGraveDto } from './dto/query-jazigo.dto';
+import { ChangeStatusGraveDto } from './dto/change-status-jazigo.dto';
 import { Roles } from '@shared/decorators/roles.decorator';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
@@ -26,9 +26,9 @@ export class JazigoController {
   constructor(private readonly service: JazigoService) {}
 
   @Post()
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   create(
-    @Body() dto: CreateJazigoDto,
+    @Body() dto: CreateGraveDto,
     @CurrentUser() user: UserPayload,
     @Req() req: Request,
   ) {
@@ -36,22 +36,22 @@ export class JazigoController {
   }
 
   @Get()
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
-  findAll(@Query() query: QueryJazigoDto, @CurrentUser() user: UserPayload) {
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  findAll(@Query() query: QueryGraveDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findOne(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findOne(id, user.tenantId);
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateJazigoDto,
+    @Body() dto: UpdateGraveDto,
     @CurrentUser() user: UserPayload,
     @Req() req: Request,
   ) {
@@ -60,10 +60,10 @@ export class JazigoController {
 
   // T-020 — transição de status via rota dedicada
   @Patch(':id/status')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR')
   changeStatus(
     @Param('id') id: string,
-    @Body() dto: ChangeStatusJazigoDto,
+    @Body() dto: ChangeStatusGraveDto,
     @CurrentUser() user: UserPayload,
     @Req() req: Request,
   ) {
@@ -72,7 +72,7 @@ export class JazigoController {
 
   // T-021 — histórico de status
   @Get(':id/historico')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findHistorico(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findHistorico(id, user.tenantId);
   }

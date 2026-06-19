@@ -11,15 +11,15 @@ class PublicDeceasedQueryDto {
 
   @IsString()
   @IsOptional()
-  municipio?: string; // tenant.dominio
+  municipio?: string; // tenant.domain
 
   @IsDateString()
   @IsOptional()
-  dataFalecimentoInicio?: string;
+  deathDateStart?: string;
 
   @IsDateString()
   @IsOptional()
-  dataFalecimentoFim?: string;
+  deathDateEnd?: string;
 
   @IsInt()
   @IsOptional()
@@ -41,14 +41,14 @@ export class PublicController {
 
   private async resolveTenant(municipio?: string): Promise<string | null> {
     if (!municipio) return null;
-    const tenant = await this.prisma.tenant.findUnique({ where: { dominio: municipio } });
+    const tenant = await this.prisma.tenant.findUnique({ where: { domain: municipio } });
     return tenant?.id ?? null;
   }
 
   // T-043 — busca pública de falecidos
   @Get('deceased')
   async searchDeceased(@Query() query: PublicDeceasedQueryDto) {
-    const { nome, municipio, dataFalecimentoInicio, dataFalecimentoFim, page = 1, limit = 20 } = query;
+    const { nome, municipio, deathDateStart, deathDateEnd, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -61,12 +61,12 @@ export class PublicController {
       where.tenantId = tenantId;
     }
 
-    if (nome) where.nomeCompleto = { contains: nome, mode: 'insensitive' };
+    if (nome) where.fullName = { contains: nome, mode: 'insensitive' };
 
-    if (dataFalecimentoInicio || dataFalecimentoFim) {
-      where.dataFalecimento = {};
-      if (dataFalecimentoInicio) where.dataFalecimento.gte = new Date(dataFalecimentoInicio);
-      if (dataFalecimentoFim) where.dataFalecimento.lte = new Date(dataFalecimentoFim);
+    if (deathDateStart || deathDateEnd) {
+      where.deathDate = {};
+      if (deathDateStart) where.deathDate.gte = new Date(deathDateStart);
+      if (deathDateEnd) where.deathDate.lte = new Date(deathDateEnd);
     }
 
     const [data, total] = await Promise.all([
@@ -74,27 +74,27 @@ export class PublicController {
         where,
         skip,
         take: limit,
-        orderBy: { nomeCompleto: 'asc' },
-        // Somente campos públicos — NUNCA cpfHash, causaMortisEnc
+        orderBy: { fullName: 'asc' },
+        // Somente campos públicos — NUNCA taxIdHash, causeOfDeathEnc
         select: {
           id: true,
-          nomeCompleto: true,
-          dataNascimento: true,
-          dataFalecimento: true,
-          naturalidade: true,
+          fullName: true,
+          birthDate: true,
+          deathDate: true,
+          birthPlace: true,
           burials: {
-            where: { tipo: 'INUMACAO' },
-            orderBy: { dataEvento: 'desc' },
+            where: { type: 'INHUMATION' },
+            orderBy: { eventDate: 'desc' },
             take: 1,
             select: {
-              dataEvento: true,
-              jazigo: {
+              eventDate: true,
+              grave: {
                 select: {
-                  codigo: true,
-                  quadra: {
+                  code: true,
+                  block: {
                     select: {
-                      codigo: true,
-                      cemiterio: { select: { nome: true } },
+                      code: true,
+                      cemetery: { select: { name: true } },
                     },
                   },
                 },
@@ -111,10 +111,10 @@ export class PublicController {
       ...d,
       localizacao: burials[0]
         ? {
-            cemiterio: burials[0].jazigo.quadra.cemiterio.nome,
-            quadra: burials[0].jazigo.quadra.codigo,
-            jazigo: burials[0].jazigo.codigo,
-            dataInumacao: burials[0].dataEvento,
+            cemiterio: burials[0].grave.block.cemetery.name,
+            quadra: burials[0].grave.block.code,
+            jazigo: burials[0].grave.code,
+            dataInumacao: burials[0].eventDate,
           }
         : null,
     }));
@@ -123,33 +123,33 @@ export class PublicController {
   }
 
   // T-044 — consulta pública de jazigo
-  @Get('jazigos/:id')
-  async getJazigo(@Param('id') id: string) {
-    const jazigo = await this.prisma.jazigo.findUnique({
+  @Get('graves/:id')
+  async getGrave(@Param('id') id: string) {
+    const grave = await this.prisma.grave.findUnique({
       where: { id },
       select: {
         id: true,
-        codigo: true,
-        tipo: true,
+        code: true,
+        type: true,
         status: true,
-        quadra: {
+        block: {
           select: {
-            codigo: true,
-            cemiterio: { select: { nome: true } },
+            code: true,
+            cemetery: { select: { name: true } },
           },
         },
         burials: {
-          where: { tipo: 'INUMACAO' },
-          orderBy: { dataEvento: 'desc' },
+          where: { type: 'INHUMATION' },
+          orderBy: { eventDate: 'desc' },
           take: 1,
           select: {
-            dataEvento: true,
-            falecido: {
+            eventDate: true,
+            deceased: {
               select: {
-                nomeCompleto: true,
-                dataNascimento: true,
-                dataFalecimento: true,
-                naturalidade: true,
+                fullName: true,
+                birthDate: true,
+                deathDate: true,
+                birthPlace: true,
                 // Campos sensíveis NUNCA são retornados aqui
               },
             },
@@ -158,18 +158,18 @@ export class PublicController {
       },
     });
 
-    if (!jazigo) throw new NotFoundException('Jazigo não encontrado');
+    if (!grave) throw new NotFoundException('Jazigo não encontrado');
 
-    const { burials, ...rest } = jazigo;
+    const { burials, ...rest } = grave;
     return {
       ...rest,
       ocupante: burials[0]
         ? {
-            nomeCompleto: burials[0].falecido.nomeCompleto,
-            dataNascimento: burials[0].falecido.dataNascimento,
-            dataFalecimento: burials[0].falecido.dataFalecimento,
-            naturalidade: burials[0].falecido.naturalidade,
-            dataInumacao: burials[0].dataEvento,
+            fullName: burials[0].deceased.fullName,
+            birthDate: burials[0].deceased.birthDate,
+            deathDate: burials[0].deceased.deathDate,
+            birthPlace: burials[0].deceased.birthPlace,
+            dataInumacao: burials[0].eventDate,
           }
         : null,
     };

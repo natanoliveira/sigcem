@@ -3,27 +3,27 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { BurialService } from '../src/modules/burial/burial.service';
 import { PrismaService } from '../src/shared/database/prisma.service';
 import { AuditService } from '../src/shared/audit/audit.service';
-import { JazigoStatus, BurialType } from '@prisma/client';
+import { GraveStatus, BurialType } from '@prisma/client';
 
 const TENANT = 'tenant-001';
 const USER = 'user-001';
 
-const mockFalecido = { id: 'f-1', nomeCompleto: 'João da Silva' };
-const mockJazigoDisponivel = { id: 'j-1', codigo: 'A01', status: JazigoStatus.DISPONIVEL };
-const mockJazigoOcupado   = { id: 'j-2', codigo: 'A02', status: JazigoStatus.OCUPADO };
-const mockJazigoDestino   = { id: 'j-3', codigo: 'B01', status: JazigoStatus.DISPONIVEL };
+const mockDeceased = { id: 'f-1', fullName: 'João da Silva' };
+const mockGraveAvailable = { id: 'j-1', code: 'A01', status: GraveStatus.AVAILABLE };
+const mockGraveOccupied  = { id: 'j-2', code: 'A02', status: GraveStatus.OCCUPIED };
+const mockGraveTarget    = { id: 'j-3', code: 'B01', status: GraveStatus.AVAILABLE };
 
 function makeMockPrisma() {
   return {
     forTenant: jest.fn().mockReturnValue({
-      deceased: { findFirst: jest.fn().mockResolvedValue(mockFalecido) },
-      jazigo:   { findFirst: jest.fn() },
+      deceased: { findFirst: jest.fn().mockResolvedValue(mockDeceased) },
+      grave:    { findFirst: jest.fn() },
       burial:   { create: jest.fn() },
     }),
     $transaction: jest.fn(),
-    burial:         { create: jest.fn() },
-    jazigo:         { update: jest.fn() },
-    jazigoHistorico:{ create: jest.fn() },
+    burial:       { create: jest.fn() },
+    grave:        { update: jest.fn() },
+    graveHistory: { create: jest.fn() },
   };
 }
 
@@ -49,54 +49,53 @@ describe('BurialService', () => {
 
   // ── Inumação ──────────────────────────────────────────────────────────────
   describe('inumar()', () => {
-    it('cria burial e atualiza jazigo para OCUPADO', async () => {
-      prisma.forTenant().jazigo.findFirst.mockResolvedValue(mockJazigoDisponivel);
-      const newBurial = { id: 'b-1', tipo: BurialType.INUMACAO };
+    it('cria burial e atualiza jazigo para OCCUPIED', async () => {
+      prisma.forTenant().grave.findFirst.mockResolvedValue(mockGraveAvailable);
+      const newBurial = { id: 'b-1', type: BurialType.INHUMATION };
       prisma.$transaction.mockResolvedValue([newBurial, {}, {}]);
 
       const dto = {
-        falecidoId: 'f-1',
-        jazigoId: 'j-1',
-        tipo: BurialType.INUMACAO,
-        dataEvento: '2024-01-15',
-        autorizadoPor: 'Secretário',
+        deceasedId: 'f-1',
+        graveId: 'j-1',
+        eventDate: '2024-01-15',
+        authorizedBy: 'Secretário',
       };
 
       const result = await service.inumar(dto, TENANT, USER);
       expect(result).toEqual(newBurial);
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-      expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ acao: 'create' }));
+      expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'create' }));
     });
 
-    it('lança 409 se jazigo OCUPADO', async () => {
-      prisma.forTenant().jazigo.findFirst.mockResolvedValue(mockJazigoOcupado);
-      const dto = { falecidoId: 'f-1', jazigoId: 'j-2', tipo: BurialType.INUMACAO, dataEvento: '2024-01-15', autorizadoPor: 'X' };
+    it('lança 409 se jazigo OCCUPIED', async () => {
+      prisma.forTenant().grave.findFirst.mockResolvedValue(mockGraveOccupied);
+      const dto = { deceasedId: 'f-1', graveId: 'j-2', eventDate: '2024-01-15', authorizedBy: 'X' };
       await expect(service.inumar(dto, TENANT, USER)).rejects.toThrow(ConflictException);
     });
 
     it('lança 404 se falecido não existe', async () => {
       prisma.forTenant().deceased.findFirst.mockResolvedValue(null);
-      prisma.forTenant().jazigo.findFirst.mockResolvedValue(mockJazigoDisponivel);
-      const dto = { falecidoId: 'x', jazigoId: 'j-1', tipo: BurialType.INUMACAO, dataEvento: '2024-01-15', autorizadoPor: 'X' };
+      prisma.forTenant().grave.findFirst.mockResolvedValue(mockGraveAvailable);
+      const dto = { deceasedId: 'x', graveId: 'j-1', eventDate: '2024-01-15', authorizedBy: 'X' };
       await expect(service.inumar(dto, TENANT, USER)).rejects.toThrow(NotFoundException);
     });
   });
 
   // ── Exumação ──────────────────────────────────────────────────────────────
   describe('exumar()', () => {
-    it('cria burial e atualiza jazigo para DISPONIVEL', async () => {
-      prisma.forTenant().jazigo.findFirst.mockResolvedValue(mockJazigoOcupado);
-      const newBurial = { id: 'b-2', tipo: BurialType.EXUMACAO };
+    it('cria burial e atualiza jazigo para AVAILABLE', async () => {
+      prisma.forTenant().grave.findFirst.mockResolvedValue(mockGraveOccupied);
+      const newBurial = { id: 'b-2', type: BurialType.EXHUMATION };
       prisma.$transaction.mockResolvedValue([newBurial, {}, {}]);
 
-      const dto = { falecidoId: 'f-1', jazigoId: 'j-2', tipo: BurialType.EXUMACAO, dataEvento: '2024-02-10', autorizadoPor: 'Y' };
+      const dto = { deceasedId: 'f-1', graveId: 'j-2', eventDate: '2024-02-10', authorizedBy: 'Y' };
       const result = await service.exumar(dto, TENANT, USER);
       expect(result).toEqual(newBurial);
     });
 
-    it('lança 409 se jazigo DISPONIVEL', async () => {
-      prisma.forTenant().jazigo.findFirst.mockResolvedValue(mockJazigoDisponivel);
-      const dto = { falecidoId: 'f-1', jazigoId: 'j-1', tipo: BurialType.EXUMACAO, dataEvento: '2024-02-10', autorizadoPor: 'Y' };
+    it('lança 409 se jazigo AVAILABLE', async () => {
+      prisma.forTenant().grave.findFirst.mockResolvedValue(mockGraveAvailable);
+      const dto = { deceasedId: 'f-1', graveId: 'j-1', eventDate: '2024-02-10', authorizedBy: 'Y' };
       await expect(service.exumar(dto, TENANT, USER)).rejects.toThrow(ConflictException);
     });
   });
@@ -105,20 +104,20 @@ describe('BurialService', () => {
   describe('transladar()', () => {
     it('lança BadRequest se origem === destino', async () => {
       const dto = {
-        falecidoId: 'f-1', jazigoOrigemId: 'j-1', jazigoDestinoId: 'j-1',
-        dataEvento: '2024-03-01', autorizadoPor: 'Z',
+        deceasedId: 'f-1', sourceGraveId: 'j-1', targetGraveId: 'j-1',
+        eventDate: '2024-03-01', authorizedBy: 'Z',
       };
       await expect(service.transladar(dto, TENANT, USER)).rejects.toThrow(BadRequestException);
     });
 
     it('executa 6 operações em transaction', async () => {
-      prisma.forTenant().jazigo.findFirst
-        .mockResolvedValueOnce(mockJazigoOcupado)   // origem
-        .mockResolvedValueOnce(mockJazigoDestino);  // destino
+      prisma.forTenant().grave.findFirst
+        .mockResolvedValueOnce(mockGraveOccupied)  // origem
+        .mockResolvedValueOnce(mockGraveTarget);   // destino
 
       const dto = {
-        falecidoId: 'f-1', jazigoOrigemId: 'j-2', jazigoDestinoId: 'j-3',
-        dataEvento: '2024-03-01', autorizadoPor: 'Z',
+        deceasedId: 'f-1', sourceGraveId: 'j-2', targetGraveId: 'j-3',
+        eventDate: '2024-03-01', authorizedBy: 'Z',
       };
       prisma.$transaction.mockResolvedValue([{}, {}, {}, {}, {}, {}]);
 
@@ -127,14 +126,14 @@ describe('BurialService', () => {
       expect(txCalls).toHaveLength(6);
     });
 
-    it('lança 409 se origem não OCUPADO', async () => {
-      prisma.forTenant().jazigo.findFirst
-        .mockResolvedValueOnce(mockJazigoDisponivel)
-        .mockResolvedValueOnce(mockJazigoDestino);
+    it('lança 409 se origem não OCCUPIED', async () => {
+      prisma.forTenant().grave.findFirst
+        .mockResolvedValueOnce(mockGraveAvailable)
+        .mockResolvedValueOnce(mockGraveTarget);
 
       const dto = {
-        falecidoId: 'f-1', jazigoOrigemId: 'j-1', jazigoDestinoId: 'j-3',
-        dataEvento: '2024-03-01', autorizadoPor: 'Z',
+        deceasedId: 'f-1', sourceGraveId: 'j-1', targetGraveId: 'j-3',
+        eventDate: '2024-03-01', authorizedBy: 'Z',
       };
       await expect(service.transladar(dto, TENANT, USER)).rejects.toThrow(ConflictException);
     });

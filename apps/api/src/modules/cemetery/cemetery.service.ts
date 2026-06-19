@@ -19,20 +19,20 @@ export class CemeteryService {
   async create(dto: CreateCemeteryDto, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const existing = await db.cemetery.findFirst({ where: { nome: dto.nome } });
+    const existing = await db.cemetery.findFirst({ where: { name: dto.name } });
     if (existing) {
-      throw new ConflictException(`Cemitério com nome "${dto.nome}" já existe`);
+      throw new ConflictException(`Cemitério com nome "${dto.name}" já existe`);
     }
 
     const cemetery = await db.cemetery.create({ data: dto as any });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'create',
-      entidadeTipo: 'Cemetery',
-      entidadeId: cemetery.id,
-      dadosNovos: cemetery,
+      userId,
+      action: 'create',
+      entityType: 'Cemetery',
+      entityId: cemetery.id,
+      newData: cemetery,
       ip,
     });
 
@@ -48,9 +48,9 @@ export class CemeteryService {
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { nome: { contains: search, mode: 'insensitive' } },
-        { endereco: { contains: search, mode: 'insensitive' } },
-        { bairro: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+        { neighborhood: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -59,7 +59,7 @@ export class CemeteryService {
         where,
         skip,
         take: limit,
-        orderBy: { nome: 'asc' },
+        orderBy: { name: 'asc' },
       }),
       db.cemetery.count({ where }),
     ]);
@@ -79,7 +79,7 @@ export class CemeteryService {
     const cemetery = await this.prisma.forTenant(tenantId).cemetery.findFirst({
       where: { id },
       include: {
-        quadras: { select: { id: true, codigo: true, status: true } },
+        blocks: { select: { id: true, code: true, status: true } },
       },
     });
 
@@ -104,10 +104,10 @@ export class CemeteryService {
       throw new NotFoundException(`Cemitério ${id} não encontrado`);
     }
 
-    if (dto.nome && dto.nome !== current.nome) {
-      const conflict = await db.cemetery.findFirst({ where: { nome: dto.nome } });
+    if (dto.name && dto.name !== current.name) {
+      const conflict = await db.cemetery.findFirst({ where: { name: dto.name } });
       if (conflict) {
-        throw new ConflictException(`Cemitério com nome "${dto.nome}" já existe`);
+        throw new ConflictException(`Cemitério com nome "${dto.name}" já existe`);
       }
     }
 
@@ -115,12 +115,12 @@ export class CemeteryService {
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'update',
-      entidadeTipo: 'Cemetery',
-      entidadeId: id,
-      dadosAnteriores: current,
-      dadosNovos: updated,
+      userId,
+      action: 'update',
+      entityType: 'Cemetery',
+      entityId: id,
+      previousData: current,
+      newData: updated,
       ip,
     });
 
@@ -139,11 +139,11 @@ export class CemeteryService {
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'delete',
-      entidadeTipo: 'Cemetery',
-      entidadeId: id,
-      dadosAnteriores: current,
+      userId,
+      action: 'delete',
+      entityType: 'Cemetery',
+      entityId: id,
+      previousData: current,
       ip,
     });
   }

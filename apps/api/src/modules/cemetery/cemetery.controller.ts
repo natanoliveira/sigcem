@@ -25,7 +25,7 @@ export class CemeteryController {
   constructor(private readonly service: CemeteryService) {}
 
   @Post()
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   create(
     @Body() dto: CreateCemeteryDto,
     @CurrentUser() user: UserPayload,
@@ -35,19 +35,19 @@ export class CemeteryController {
   }
 
   @Get()
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findAll(@Query() query: QueryCemeteryDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findOne(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findOne(id, user.tenantId);
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   update(
     @Param('id') id: string,
     @Body() dto: UpdateCemeteryDto,

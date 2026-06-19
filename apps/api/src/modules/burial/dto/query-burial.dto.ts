@@ -5,23 +5,23 @@ import { BurialType } from '@prisma/client';
 export class QueryBurialDto {
   @IsString()
   @IsOptional()
-  falecidoId?: string;
+  deceasedId?: string;
 
   @IsString()
   @IsOptional()
-  jazigoId?: string;
+  graveId?: string;
 
   @IsEnum(BurialType)
   @IsOptional()
-  tipo?: BurialType;
+  type?: BurialType;
 
   @IsDateString()
   @IsOptional()
-  dataInicio?: string;
+  startDate?: string;
 
   @IsDateString()
   @IsOptional()
-  dataFim?: string;
+  endDate?: string;
 
   @IsInt()
   @IsOptional()

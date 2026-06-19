@@ -5,15 +5,15 @@ import { DocumentType } from '@prisma/client';
 export class QueryDocumentDto {
   @IsString()
   @IsOptional()
-  entidadeTipo?: string;
+  entityType?: string;
 
   @IsString()
   @IsOptional()
-  entidadeId?: string;
+  entityId?: string;
 
   @IsEnum(DocumentType)
   @IsOptional()
-  tipo?: DocumentType;
+  type?: DocumentType;
 
   @IsInt()
   @IsOptional()

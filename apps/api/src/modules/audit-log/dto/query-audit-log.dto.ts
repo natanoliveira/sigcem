@@ -4,27 +4,27 @@ import { Type } from 'class-transformer';
 export class QueryAuditLogDto {
   @IsString()
   @IsOptional()
-  entidadeTipo?: string;
+  entityType?: string;
 
   @IsString()
   @IsOptional()
-  entidadeId?: string;
+  entityId?: string;
 
   @IsString()
   @IsOptional()
-  usuarioId?: string;
+  userId?: string;
 
   @IsString()
   @IsOptional()
-  acao?: string;
+  action?: string;
 
   @IsDateString()
   @IsOptional()
-  dataInicio?: string;
+  startDate?: string;
 
   @IsDateString()
   @IsOptional()
-  dataFim?: string;
+  endDate?: string;
 
   @IsInt()
   @IsOptional()

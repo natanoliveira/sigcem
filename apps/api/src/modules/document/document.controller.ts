@@ -28,29 +28,29 @@ export class DocumentController {
 
   // T-034 — upload
   @Post('upload')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   upload(
     @UploadedFile() file: Express.Multer.File,
-    @Query('entidadeTipo') entidadeTipo: string,
-    @Query('entidadeId') entidadeId: string,
-    @Query('tipo') tipo: string,
+    @Query('entityType') entityType: string,
+    @Query('entityId') entityId: string,
+    @Query('type') type: string,
     @CurrentUser() user: UserPayload,
     @Req() req: Request,
   ) {
     if (!file) throw new BadRequestException('Arquivo não enviado');
-    if (!entidadeTipo || !entidadeId) {
-      throw new BadRequestException('entidadeTipo e entidadeId são obrigatórios');
+    if (!entityType || !entityId) {
+      throw new BadRequestException('entityType e entityId são obrigatórios');
     }
-    if (!Object.values(DocumentType).includes(tipo as DocumentType)) {
+    if (!Object.values(DocumentType).includes(type as DocumentType)) {
       throw new BadRequestException(`Tipo inválido. Permitido: ${Object.values(DocumentType).join(', ')}`);
     }
 
     return this.service.upload(
       file,
-      entidadeTipo,
-      entidadeId,
-      tipo as DocumentType,
+      entityType,
+      entityId,
+      type as DocumentType,
       user.tenantId,
       user.sub,
       user.name,
@@ -59,14 +59,14 @@ export class DocumentController {
   }
 
   @Get()
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findAll(@Query() query: QueryDocumentDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   // T-035 — download com URL assinada
   @Get(':id/download')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   download(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
@@ -77,7 +77,7 @@ export class DocumentController {
 
   // T-036 — inativação
   @Patch(':id/inativar')
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   inativar(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
@@ -88,7 +88,7 @@ export class DocumentController {
 
   // T-039 — emissão de certidão
   @Post('certidao')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   emitirCertidao(
     @Body() dto: EmitCertificateDto,
     @CurrentUser() user: UserPayload,

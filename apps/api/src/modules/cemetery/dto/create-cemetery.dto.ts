@@ -5,17 +5,17 @@ export class CreateCemeteryDto {
   @IsString()
   @IsNotEmpty({ message: 'Nome é obrigatório' })
   @MaxLength(200)
-  nome: string;
+  name: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Endereço é obrigatório' })
   @MaxLength(300)
-  endereco: string;
+  address: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(100)
-  bairro?: string;
+  neighborhood?: string;
 
   @IsNumber()
   @IsOptional()
@@ -27,5 +27,5 @@ export class CreateCemeteryDto {
   @IsOptional()
   @Min(0)
   @Type(() => Number)
-  capacidade?: number;
+  capacity?: number;
 }

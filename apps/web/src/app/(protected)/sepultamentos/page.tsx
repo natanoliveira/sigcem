@@ -7,19 +7,19 @@ import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 
 const TIPO_CONFIG: Record<string, { label: string; className: string }> = {
-  INUMACAO: { label: 'Inumação', className: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
-  EXUMACAO: { label: 'Exumação', className: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
-  TRANSLADO: { label: 'Translado', className: 'bg-purple-50 text-purple-700 ring-purple-600/20' },
+  INHUMATION: { label: 'Inumação', className: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
+  EXHUMATION: { label: 'Exumação', className: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
+  TRANSFER: { label: 'Translado', className: 'bg-purple-50 text-purple-700 ring-purple-600/20' },
 };
 
 interface Burial {
   id: string;
-  tipo: string;
-  dataEvento: string;
-  autorizadoPor: string;
-  funeraria: string | null;
-  falecido: { id: string; nomeCompleto: string };
-  jazigo: { id: string; codigo: string; quadra: { codigo: string; cemiterio: { nome: string } } };
+  type: string;
+  eventDate: string;
+  authorizedBy: string;
+  funeralHome: string | null;
+  deceased: { id: string; fullName: string };
+  grave: { id: string; code: string; block: { code: string; cemetery: { name: string } } };
 }
 
 interface ApiResponse {
@@ -41,7 +41,7 @@ export default function SepultamentosPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
-      if (tipoFilter) params.set('tipo', tipoFilter);
+      if (tipoFilter) params.set('type', tipoFilter);
       const data = await api.get(`/api/v1/burials?${params}`);
       setResult(data);
     } catch {
@@ -78,9 +78,9 @@ export default function SepultamentosPage() {
             className="px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="">Todos os tipos</option>
-            <option value="INUMACAO">Inumação</option>
-            <option value="EXUMACAO">Exumação</option>
-            <option value="TRANSLADO">Translado</option>
+            <option value="INHUMATION">Inumação</option>
+            <option value="EXHUMATION">Exumação</option>
+            <option value="TRANSFER">Translado</option>
           </select>
         </div>
 
@@ -115,7 +115,7 @@ export default function SepultamentosPage() {
                 </tr>
               ) : (
                 result?.data.map((b) => {
-                  const cfg = TIPO_CONFIG[b.tipo];
+                  const cfg = TIPO_CONFIG[b.type];
                   return (
                     <tr key={b.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
                       <td className="px-4 py-3">
@@ -124,20 +124,20 @@ export default function SepultamentosPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/falecidos/${b.falecido.id}`} className="font-medium text-neutral-900 hover:text-primary-600 hover:underline">
-                          {b.falecido.nomeCompleto}
+                        <Link href={`/falecidos/${b.deceased.id}`} className="font-medium text-neutral-900 hover:text-primary-600 hover:underline">
+                          {b.deceased.fullName}
                         </Link>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/jazigos/${b.jazigo.id}`} className="font-mono text-primary-600 hover:underline">
-                          {b.jazigo.codigo}
+                        <Link href={`/jazigos/${b.grave.id}`} className="font-mono text-primary-600 hover:underline">
+                          {b.grave.code}
                         </Link>
                         <span className="text-xs text-neutral-400 ml-1">
-                          — {b.jazigo.quadra.cemiterio.nome}
+                          — {b.grave.block.cemetery.name}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-neutral-600">{formatDate(b.dataEvento)}</td>
-                      <td className="px-4 py-3 text-neutral-500 text-xs">{b.funeraria ?? '—'}</td>
+                      <td className="px-4 py-3 text-neutral-600">{formatDate(b.eventDate)}</td>
+                      <td className="px-4 py-3 text-neutral-500 text-xs">{b.funeralHome ?? '—'}</td>
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/sepultamentos/${b.id}`}

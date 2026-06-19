@@ -9,40 +9,40 @@ import {
 export class CreateTransladoDto {
   @IsString()
   @IsNotEmpty()
-  falecidoId: string;
+  deceasedId: string;
 
   @IsString()
   @IsNotEmpty()
-  jazigoOrigemId: string;
+  sourceGraveId: string;
 
   @IsString()
   @IsNotEmpty()
-  jazigoDestinoId: string;
+  targetGraveId: string;
 
   @IsDateString()
-  dataEvento: string;
+  eventDate: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Responsável pela autorização é obrigatório' })
   @MaxLength(200)
-  autorizadoPor: string;
+  authorizedBy: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(200)
-  funeraria?: string;
+  funeralHome?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(200)
-  responsavelNome?: string;
+  responsibleName?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(20)
-  responsavelCpf?: string;
+  responsibleTaxId?: string;
 
   @IsString()
   @IsOptional()
-  observacoes?: string;
+  notes?: string;
 }

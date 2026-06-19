@@ -12,52 +12,52 @@ datasource db {
 
 enum UserRole {
   ADMIN
-  GESTOR
-  OPERADOR
-  AGENTE_DOCUMENTAL
+  MANAGER
+  OPERATOR
+  DOCUMENT_AGENT
 }
 
 enum EntityStatus {
-  ATIVO
-  INATIVO
+  ACTIVE
+  INACTIVE
 }
 
-enum JazigoType {
-  SIMPLES
-  DUPLO
-  GAVETA
-  OSSUARIO
-  PERPETUO
+enum GraveType {
+  SINGLE
+  DOUBLE
+  DRAWER
+  OSSUARY
+  PERPETUAL
 }
 
-enum JazigoStatus {
-  DISPONIVEL
-  OCUPADO
-  RESERVADO
-  INTERDITADO
+enum GraveStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  BLOCKED
 }
 
 enum BurialType {
-  INUMACAO
-  EXUMACAO
-  TRANSLADO
+  INHUMATION
+  EXHUMATION
+  TRANSFER
 }
 
 enum DocumentType {
-  CERTIDAO
-  AUTORIZACAO
-  FOTOGRAFIA
-  ANEXO
+  CERTIFICATE
+  AUTHORIZATION
+  PHOTO
+  ATTACHMENT
 }
 
 // ── Tenant ───────────────────────────────────────────────────────────────────
 
 model Tenant {
   id         String      @id @default(uuid())
-  nome       String
-  dominio    String      @unique
-  ativo      Boolean     @default(true)
-  criadoEm  DateTime    @default(now()) @map("criado_em")
+  name       String
+  domain     String      @unique
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now()) @map("created_at")
   users      User[]
   cemeteries Cemetery[]
 
@@ -70,12 +70,12 @@ model User {
   id         String    @id @default(uuid())
   tenantId   String    @map("tenant_id")
   keycloakId String?   @unique @map("keycloak_id")
-  nome       String
+  name       String
   email      String
-  senha      String   @map("senha")
-  perfil     UserRole
-  ativo      Boolean   @default(true)
-  criadoEm  DateTime   @default(now()) @map("criado_em")
+  password   String
+  role       UserRole
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at")
   tenant     Tenant    @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, email])
@@ -88,77 +88,77 @@ model User {
 model Cemetery {
   id           String       @id @default(uuid())
   tenantId     String       @map("tenant_id")
-  nome         String
-  endereco     String
-  bairro       String?
+  name         String
+  address      String
+  neighborhood String?
   areaM2       Decimal?     @map("area_m2")
-  capacidade   Int?
-  status       EntityStatus @default(ATIVO)
-  criadoEm    DateTime     @default(now()) @map("criado_em")
-  atualizadoEm DateTime    @updatedAt @map("atualizado_em")
+  capacity     Int?
+  status       EntityStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
   tenant       Tenant       @relation(fields: [tenantId], references: [id])
-  quadras      Quadra[]
+  blocks       Block[]
 
-  @@unique([tenantId, nome])
+  @@unique([tenantId, name])
   @@index([tenantId, status])
   @@map("cemeteries")
 }
 
-// ── Quadra ───────────────────────────────────────────────────────────────────
+// ── Block ────────────────────────────────────────────────────────────────────
 
-model Quadra {
-  id          String       @id @default(uuid())
-  tenantId    String       @map("tenant_id")
-  cemiterioId String       @map("cemiterio_id")
-  codigo      String
-  nome        String?
-  capacidade  Int?
-  status      EntityStatus @default(ATIVO)
-  criadoEm   DateTime     @default(now()) @map("criado_em")
-  cemiterio   Cemetery     @relation(fields: [cemiterioId], references: [id])
-  jazigos     Jazigo[]
+model Block {
+  id         String       @id @default(uuid())
+  tenantId   String       @map("tenant_id")
+  cemeteryId String       @map("cemetery_id")
+  code       String
+  name       String?
+  capacity   Int?
+  status     EntityStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  cemetery   Cemetery     @relation(fields: [cemeteryId], references: [id])
+  graves     Grave[]
 
-  @@unique([cemiterioId, codigo])
+  @@unique([cemeteryId, code])
   @@index([tenantId])
-  @@map("quadras")
+  @@map("blocks")
 }
 
-// ── Jazigo ───────────────────────────────────────────────────────────────────
+// ── Grave ────────────────────────────────────────────────────────────────────
 
-model Jazigo {
-  id              String         @id @default(uuid())
-  tenantId        String         @map("tenant_id")
-  quadraId        String         @map("quadra_id")
-  codigo          String
-  tipo            JazigoType
-  status          JazigoStatus   @default(DISPONIVEL)
-  localizacaoRef  String?        @map("localizacao_referencia")
-  observacoes     String?
-  criadoEm       DateTime        @default(now()) @map("criado_em")
-  atualizadoEm   DateTime        @updatedAt @map("atualizado_em")
-  quadra          Quadra         @relation(fields: [quadraId], references: [id])
-  historico       JazigoHistorico[]
-  burials         Burial[]
+model Grave {
+  id          String      @id @default(uuid())
+  tenantId    String      @map("tenant_id")
+  blockId     String      @map("block_id")
+  code        String
+  type        GraveType
+  status      GraveStatus @default(AVAILABLE)
+  locationRef String?     @map("location_ref")
+  notes       String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  block       Block       @relation(fields: [blockId], references: [id])
+  history     GraveHistory[]
+  burials     Burial[]
 
-  @@unique([quadraId, codigo])
+  @@unique([blockId, code])
   @@index([tenantId, status])
-  @@map("jazigos")
+  @@map("graves")
 }
 
-// ── Jazigo Histórico ─────────────────────────────────────────────────────────
+// ── Grave History ─────────────────────────────────────────────────────────────
 
-model JazigoHistorico {
-  id             String       @id @default(uuid())
-  jazigoId       String       @map("jazigo_id")
-  statusAnterior JazigoStatus @map("status_anterior")
-  statusNovo     JazigoStatus @map("status_novo")
-  motivo         String?
-  usuarioId      String       @map("usuario_id")
-  criadoEm      DateTime     @default(now()) @map("criado_em")
-  jazigo         Jazigo       @relation(fields: [jazigoId], references: [id])
+model GraveHistory {
+  id             String      @id @default(uuid())
+  graveId        String      @map("grave_id")
+  previousStatus GraveStatus @map("previous_status")
+  newStatus      GraveStatus @map("new_status")
+  reason         String?
+  userId         String      @map("user_id")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  grave          Grave       @relation(fields: [graveId], references: [id])
 
-  @@index([jazigoId])
-  @@map("jazigo_historico")
+  @@index([graveId])
+  @@map("grave_history")
 }
 
 // ── Deceased ─────────────────────────────────────────────────────────────────
@@ -166,81 +166,81 @@ model JazigoHistorico {
 model Deceased {
   id              String    @id @default(uuid())
   tenantId        String    @map("tenant_id")
-  nomeCompleto    String    @map("nome_completo")
-  dataNascimento  DateTime  @map("data_nascimento")
-  dataFalecimento DateTime  @map("data_falecimento")
-  cpfHash         String?   @map("cpf_hash")
-  causaMortisEnc  String?   @map("causa_mortis_enc")
-  naturalidade    String?
-  nacionalidade   String?
-  nomePai         String?   @map("nome_pai")
-  nomeMae         String?   @map("nome_mae")
-  observacoes     String?
-  criadoEm       DateTime   @default(now()) @map("criado_em")
-  atualizadoEm   DateTime   @updatedAt @map("atualizado_em")
+  fullName        String    @map("full_name")
+  birthDate       DateTime  @map("birth_date")
+  deathDate       DateTime  @map("death_date")
+  taxIdHash       String?   @map("tax_id_hash")
+  causeOfDeathEnc String?   @map("cause_of_death_enc")
+  birthPlace      String?   @map("birth_place")
+  nationality     String?
+  fatherName      String?   @map("father_name")
+  motherName      String?   @map("mother_name")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   burials         Burial[]
 
-  @@index([tenantId, nomeCompleto])
+  @@index([tenantId, fullName])
   @@map("deceased")
 }
 
 // ── Burial ───────────────────────────────────────────────────────────────────
 
 model Burial {
-  id              String     @id @default(uuid())
-  tenantId        String     @map("tenant_id")
-  falecidoId      String     @map("falecido_id")
-  jazigoId        String     @map("jazigo_id")
-  tipo            BurialType
-  dataEvento      DateTime   @map("data_evento")
-  funeraria       String?
-  responsavelNome String?    @map("responsavel_nome")
-  responsavelCpf  String?    @map("responsavel_cpf")
-  autorizadoPor   String     @map("autorizado_por")
-  observacoes     String?
-  criadoEm       DateTime    @default(now()) @map("criado_em")
-  falecido        Deceased   @relation(fields: [falecidoId], references: [id])
-  jazigo          Jazigo     @relation(fields: [jazigoId], references: [id])
+  id               String     @id @default(uuid())
+  tenantId         String     @map("tenant_id")
+  deceasedId       String     @map("deceased_id")
+  graveId          String     @map("grave_id")
+  type             BurialType
+  eventDate        DateTime   @map("event_date")
+  funeralHome      String?    @map("funeral_home")
+  responsibleName  String?    @map("responsible_name")
+  responsibleTaxId String?    @map("responsible_tax_id")
+  authorizedBy     String     @map("authorized_by")
+  notes            String?
+  createdAt        DateTime   @default(now()) @map("created_at")
+  deceased         Deceased   @relation(fields: [deceasedId], references: [id])
+  grave            Grave      @relation(fields: [graveId], references: [id])
 
   @@index([tenantId])
-  @@index([falecidoId])
-  @@index([jazigoId])
+  @@index([deceasedId])
+  @@index([graveId])
   @@map("burials")
 }
 
 // ── Document ─────────────────────────────────────────────────────────────────
 
 model Document {
-  id           String       @id @default(uuid())
-  tenantId     String       @map("tenant_id")
-  tipo         DocumentType
-  entidadeTipo String       @map("entidade_tipo")
-  entidadeId   String       @map("entidade_id")
-  nomeArquivo  String       @map("nome_arquivo")
-  urlMinio     String       @map("url_minio")
-  emitidoEm   DateTime      @default(now()) @map("emitido_em")
-  emitidoPor   String       @map("emitido_por")
-  ativo        Boolean      @default(true)
+  id         String       @id @default(uuid())
+  tenantId   String       @map("tenant_id")
+  type       DocumentType
+  entityType String       @map("entity_type")
+  entityId   String       @map("entity_id")
+  fileName   String       @map("file_name")
+  storageKey String       @map("storage_key")
+  issuedAt   DateTime     @default(now()) @map("issued_at")
+  issuedBy   String       @map("issued_by")
+  active     Boolean      @default(true)
 
-  @@index([tenantId, entidadeTipo, entidadeId])
+  @@index([tenantId, entityType, entityId])
   @@map("documents")
 }
 
 // ── Audit Log ────────────────────────────────────────────────────────────────
 
 model AuditLog {
-  id              String   @id @default(uuid())
-  tenantId        String   @map("tenant_id")
-  usuarioId       String   @map("usuario_id")
-  acao            String
-  entidadeTipo    String   @map("entidade_tipo")
-  entidadeId      String   @map("entidade_id")
-  dadosAnteriores Json?    @map("dados_anteriores")
-  dadosNovos      Json?    @map("dados_novos")
-  ip              String?
-  criadoEm       DateTime  @default(now()) @map("criado_em")
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  userId       String   @map("user_id")
+  action       String
+  entityType   String   @map("entity_type")
+  entityId     String   @map("entity_id")
+  previousData Json?    @map("previous_data")
+  newData      Json?    @map("new_data")
+  ip           String?
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  @@index([tenantId, entidadeTipo, entidadeId])
-  @@index([tenantId, criadoEm])
+  @@index([tenantId, entityType, entityId])
+  @@index([tenantId, createdAt])
   @@map("audit_logs")
 }

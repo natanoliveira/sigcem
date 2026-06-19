@@ -17,14 +17,14 @@ const ENTIDADE_OPTIONS = [
 
 interface AuditLog {
   id: string;
-  usuarioId: string;
-  acao: string;
-  entidadeTipo: string;
-  entidadeId: string;
-  dadosAnteriores: Record<string, unknown> | null;
-  dadosNovos: Record<string, unknown> | null;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  previousData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
   ip: string | null;
-  criadoEm: string;
+  createdAt: string;
 }
 
 interface ApiResponse {
@@ -70,10 +70,10 @@ export default function AuditoriaPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
-      if (filters.entidadeTipo) params.set('entidadeTipo', filters.entidadeTipo);
-      if (filters.acao) params.set('acao', filters.acao);
-      if (filters.dataInicio) params.set('dataInicio', filters.dataInicio);
-      if (filters.dataFim) params.set('dataFim', filters.dataFim);
+      if (filters.entidadeTipo) params.set('entityType', filters.entidadeTipo);
+      if (filters.acao) params.set('action', filters.acao);
+      if (filters.dataInicio) params.set('startDate', filters.dataInicio);
+      if (filters.dataFim) params.set('endDate', filters.dataFim);
       const data = await api.get(`/api/v1/audit-logs?${params}`);
       setResult(data);
     } catch {
@@ -158,10 +158,10 @@ export default function AuditoriaPage() {
           </div>
         ) : (
           result?.data.map((log) => {
-            const cfg = ACAO_CONFIG[log.acao] ?? { label: log.acao, className: 'bg-neutral-100 text-neutral-600 ring-neutral-500/20' };
+            const cfg = ACAO_CONFIG[log.action] ?? { label: log.action, className: 'bg-neutral-100 text-neutral-600 ring-neutral-500/20' };
             const isExpanded = expanded === log.id;
-            const hasDetail = log.dadosAnteriores || log.dadosNovos;
-            const date = new Date(log.criadoEm).toLocaleString('pt-BR', {
+            const hasDetail = log.previousData || log.newData;
+            const date = new Date(log.createdAt).toLocaleString('pt-BR', {
               day: '2-digit', month: '2-digit', year: 'numeric',
               hour: '2-digit', minute: '2-digit', second: '2-digit',
             });
@@ -175,8 +175,8 @@ export default function AuditoriaPage() {
                   <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset shrink-0 ${cfg.className}`}>
                     {cfg.label}
                   </span>
-                  <span className="text-sm font-medium text-neutral-700 shrink-0">{log.entidadeTipo}</span>
-                  <span className="text-xs text-neutral-400 font-mono truncate flex-1">{log.entidadeId}</span>
+                  <span className="text-sm font-medium text-neutral-700 shrink-0">{log.entityType}</span>
+                  <span className="text-xs text-neutral-400 font-mono truncate flex-1">{log.entityId}</span>
                   <span className="text-xs text-neutral-400 shrink-0">{date}</span>
                   {hasDetail && (
                     <span className="text-xs text-neutral-400 shrink-0">{isExpanded ? '▲' : '▼'}</span>
@@ -186,10 +186,10 @@ export default function AuditoriaPage() {
                 {isExpanded && hasDetail && (
                   <div className="px-4 pb-4 border-t border-neutral-50">
                     <div className="flex gap-2 mt-2 text-xs text-neutral-400">
-                      <span>Usuário: <span className="font-mono text-neutral-600">{log.usuarioId.slice(0, 8)}</span></span>
+                      <span>Usuário: <span className="font-mono text-neutral-600">{log.userId.slice(0, 8)}</span></span>
                       {log.ip && <span>· IP: {log.ip}</span>}
                     </div>
-                    <DiffView antes={log.dadosAnteriores} depois={log.dadosNovos} />
+                    <DiffView antes={log.previousData} depois={log.newData} />
                   </div>
                 )}
               </div>

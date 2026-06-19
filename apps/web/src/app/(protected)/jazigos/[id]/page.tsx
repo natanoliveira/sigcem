@@ -10,32 +10,32 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ChangeStatusDialog } from '@/components/jazigo/change-status-dialog';
 
 const TIPO_LABEL: Record<string, string> = {
-  SIMPLES: 'Simples',
-  DUPLO: 'Duplo',
-  GAVETA: 'Gaveta',
-  OSSUARIO: 'Ossário',
-  PERPETUO: 'Perpétuo',
+  SINGLE: 'Simples',
+  DOUBLE: 'Duplo',
+  DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário',
+  PERPETUAL: 'Perpétuo',
 };
 
-interface JazigoHistorico {
+interface GraveHistory {
   id: string;
-  statusAnterior: string;
-  statusNovo: string;
-  motivo: string | null;
-  usuarioId: string;
-  criadoEm: string;
+  previousStatus: string;
+  newStatus: string;
+  reason: string | null;
+  userId: string;
+  createdAt: string;
 }
 
 interface Jazigo {
   id: string;
-  codigo: string;
-  tipo: string;
+  code: string;
+  type: string;
   status: string;
-  localizacaoRef: string | null;
-  observacoes: string | null;
-  criadoEm: string;
-  quadra: { id: string; codigo: string; cemiterio: { id: string; nome: string } };
-  historico: JazigoHistorico[];
+  locationRef: string | null;
+  notes: string | null;
+  createdAt: string;
+  block: { id: string; code: string; cemetery: { id: string; name: string } };
+  history: GraveHistory[];
 }
 
 export default function DetalheJazigoPage() {
@@ -48,7 +48,7 @@ export default function DetalheJazigoPage() {
   const fetchJazigo = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get(`/api/v1/jazigos/${id}`);
+      const data = await api.get(`/api/v1/graves/${id}`);
       setJazigo(data);
     } catch {
       router.replace('/jazigos');
@@ -72,18 +72,18 @@ export default function DetalheJazigoPage() {
     );
   }
 
-  const criadoEm = new Date(jazigo.criadoEm).toLocaleDateString('pt-BR', {
+  const criadoEm = new Date(jazigo.createdAt).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Jazigo ${jazigo.codigo}`}
+        title={`Jazigo ${jazigo.code}`}
         breadcrumbs={[
           { label: 'Estrutura' },
           { label: 'Jazigos', href: '/jazigos' },
-          { label: jazigo.codigo },
+          { label: jazigo.code },
         ]}
         action={
           <div className="flex gap-2">
@@ -116,34 +116,34 @@ export default function DetalheJazigoPage() {
             </div>
             <div>
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Tipo</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{TIPO_LABEL[jazigo.tipo] ?? jazigo.tipo}</dd>
+              <dd className="mt-1 text-sm text-neutral-900">{TIPO_LABEL[jazigo.type] ?? jazigo.type}</dd>
             </div>
             <div>
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Quadra</dt>
               <dd className="mt-1">
-                <Link href={`/quadras/${jazigo.quadra.id}`} className="text-sm text-primary-600 hover:underline">
-                  Quadra {jazigo.quadra.codigo}
+                <Link href={`/quadras/${jazigo.block.id}`} className="text-sm text-primary-600 hover:underline">
+                  Quadra {jazigo.block.code}
                 </Link>
               </dd>
             </div>
             <div>
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Cemitério</dt>
               <dd className="mt-1">
-                <Link href={`/cemiterios/${jazigo.quadra.cemiterio.id}`} className="text-sm text-primary-600 hover:underline">
-                  {jazigo.quadra.cemiterio.nome}
+                <Link href={`/cemiterios/${jazigo.block.cemetery.id}`} className="text-sm text-primary-600 hover:underline">
+                  {jazigo.block.cemetery.name}
                 </Link>
               </dd>
             </div>
-            {jazigo.localizacaoRef && (
+            {jazigo.locationRef && (
               <div>
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Localização</dt>
-                <dd className="mt-1 text-sm text-neutral-900">{jazigo.localizacaoRef}</dd>
+                <dd className="mt-1 text-sm text-neutral-900">{jazigo.locationRef}</dd>
               </div>
             )}
-            {jazigo.observacoes && (
+            {jazigo.notes && (
               <div>
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Observações</dt>
-                <dd className="mt-1 text-sm text-neutral-600">{jazigo.observacoes}</dd>
+                <dd className="mt-1 text-sm text-neutral-600">{jazigo.notes}</dd>
               </div>
             )}
             <div>
@@ -157,25 +157,25 @@ export default function DetalheJazigoPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 p-6">
           <h2 className="text-sm font-semibold text-neutral-900 mb-4">Histórico de status</h2>
 
-          {jazigo.historico.length === 0 ? (
+          {jazigo.history.length === 0 ? (
             <p className="text-sm text-neutral-500 text-center py-8">
               Nenhuma alteração de status registrada.
             </p>
           ) : (
             <div className="space-y-3">
-              {jazigo.historico.map((h) => {
-                const data = new Date(h.criadoEm).toLocaleString('pt-BR', {
+              {jazigo.history.map((h) => {
+                const data = new Date(h.createdAt).toLocaleString('pt-BR', {
                   day: '2-digit', month: '2-digit', year: 'numeric',
                   hour: '2-digit', minute: '2-digit',
                 });
                 return (
                   <div key={h.id} className="flex items-start gap-3 p-3 rounded-lg bg-neutral-50">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <StatusBadge status={h.statusAnterior} />
+                      <StatusBadge status={h.previousStatus} />
                       <ArrowRight size={13} className="text-neutral-400 shrink-0" />
-                      <StatusBadge status={h.statusNovo} />
-                      {h.motivo && (
-                        <span className="text-xs text-neutral-500 truncate ml-1">— {h.motivo}</span>
+                      <StatusBadge status={h.newStatus} />
+                      {h.reason && (
+                        <span className="text-xs text-neutral-500 truncate ml-1">— {h.reason}</span>
                       )}
                     </div>
                     <span className="text-xs text-neutral-400 shrink-0 whitespace-nowrap">{data}</span>

@@ -11,13 +11,13 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Cemetery {
   id: string;
-  nome: string;
-  endereco: string;
-  bairro: string | null;
+  name: string;
+  address: string;
+  neighborhood: string | null;
   areaM2: number | null;
-  capacidade: number | null;
+  capacity: number | null;
   status: string;
-  criadoEm: string;
+  createdAt: string;
 }
 
 interface ApiResponse {
@@ -134,11 +134,11 @@ export default function CemiteriosPage() {
               ) : (
                 result?.data.map((c) => (
                   <tr key={c.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-neutral-900">{c.nome}</td>
-                    <td className="px-4 py-3 text-neutral-600">{c.endereco}</td>
-                    <td className="px-4 py-3 text-neutral-600">{c.bairro ?? '—'}</td>
+                    <td className="px-4 py-3 font-medium text-neutral-900">{c.name}</td>
+                    <td className="px-4 py-3 text-neutral-600">{c.address}</td>
+                    <td className="px-4 py-3 text-neutral-600">{c.neighborhood ?? '—'}</td>
                     <td className="px-4 py-3 text-neutral-600">
-                      {c.capacidade != null ? c.capacidade.toLocaleString('pt-BR') : '—'}
+                      {c.capacity != null ? c.capacity.toLocaleString('pt-BR') : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={c.status} />
@@ -203,7 +203,7 @@ export default function CemiteriosPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Excluir cemitério"
-        description={`Tem certeza que deseja excluir "${deleteTarget?.nome}"? Esta ação não pode ser desfeita.`}
+        description={`Tem certeza que deseja excluir "${deleteTarget?.name}"? Esta ação não pode ser desfeita.`}
         confirmLabel="Excluir"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

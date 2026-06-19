@@ -4,33 +4,33 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
-type JazigoStatus = 'DISPONIVEL' | 'OCUPADO' | 'RESERVADO' | 'INTERDITADO';
+type GraveStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'BLOCKED';
 
-const ALLOWED: Record<JazigoStatus, JazigoStatus[]> = {
-  DISPONIVEL: ['OCUPADO', 'RESERVADO', 'INTERDITADO'],
-  RESERVADO: ['OCUPADO', 'DISPONIVEL', 'INTERDITADO'],
-  OCUPADO: ['DISPONIVEL', 'INTERDITADO'],
-  INTERDITADO: ['DISPONIVEL'],
+const ALLOWED: Record<GraveStatus, GraveStatus[]> = {
+  AVAILABLE: ['OCCUPIED', 'RESERVED', 'BLOCKED'],
+  RESERVED: ['OCCUPIED', 'AVAILABLE', 'BLOCKED'],
+  OCCUPIED: ['AVAILABLE', 'BLOCKED'],
+  BLOCKED: ['AVAILABLE'],
 };
 
-const STATUS_LABEL: Record<JazigoStatus, string> = {
-  DISPONIVEL: 'Disponível',
-  OCUPADO: 'Ocupado',
-  RESERVADO: 'Reservado',
-  INTERDITADO: 'Interditado',
+const STATUS_LABEL: Record<GraveStatus, string> = {
+  AVAILABLE: 'Disponível',
+  OCCUPIED: 'Ocupado',
+  RESERVED: 'Reservado',
+  BLOCKED: 'Interditado',
 };
 
 interface Props {
   open: boolean;
   jazigoId: string;
-  currentStatus: JazigoStatus;
+  currentStatus: GraveStatus;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 export function ChangeStatusDialog({ open, jazigoId, currentStatus, onClose, onSuccess }: Props) {
-  const [selectedStatus, setSelectedStatus] = useState<JazigoStatus | ''>('');
-  const [motivo, setMotivo] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<GraveStatus | ''>('');
+  const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,12 +42,12 @@ export function ChangeStatusDialog({ open, jazigoId, currentStatus, onClose, onS
     setLoading(true);
     setError('');
     try {
-      await api.patch(`/api/v1/jazigos/${jazigoId}/status`, {
+      await api.patch(`/api/v1/graves/${jazigoId}/status`, {
         status: selectedStatus,
-        motivo: motivo.trim() || undefined,
+        reason: reason.trim() || undefined,
       });
       setSelectedStatus('');
-      setMotivo('');
+      setReason('');
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -105,8 +105,8 @@ export function ChangeStatusDialog({ open, jazigoId, currentStatus, onClose, onS
               Motivo <span className="text-neutral-400 font-normal">(opcional)</span>
             </label>
             <textarea
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               rows={2}
               placeholder="Descreva o motivo da mudança..."
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"

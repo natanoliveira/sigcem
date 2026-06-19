@@ -8,23 +8,16 @@ import { StatusBadge } from '@/components/ui/status-badge';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
-const jazigoStatusLabel: Record<string, string> = {
-  DISPONIVEL: 'Disponível',
-  OCUPADO: 'Ocupado',
-  RESERVADO: 'Reservado',
-  INTERDITADO: 'Interditado',
-};
-
-const jazigoTypeLabel: Record<string, string> = {
-  SIMPLES: 'Simples',
-  DUPLO: 'Duplo',
-  GAVETA: 'Gaveta',
-  OSSUARIO: 'Ossário',
-  PERPETUO: 'Perpétuo',
+const graveTypeLabel: Record<string, string> = {
+  SINGLE: 'Simples',
+  DOUBLE: 'Duplo',
+  DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário',
+  PERPETUAL: 'Perpétuo',
 };
 
 async function getQuadra(id: string, token: string) {
-  const res = await fetch(`${API_URL}/api/v1/quadras/${id}`, {
+  const res = await fetch(`${API_URL}/api/v1/blocks/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
@@ -46,12 +39,12 @@ export default async function DetalheQuadraPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Quadra ${quadra.codigo}`}
-        description={quadra.nome ?? undefined}
+        title={`Quadra ${quadra.code}`}
+        description={quadra.name ?? undefined}
         breadcrumbs={[
           { label: 'Estrutura' },
           { label: 'Quadras', href: '/quadras' },
-          { label: quadra.codigo },
+          { label: quadra.code },
         ]}
         action={
           <Link
@@ -71,8 +64,8 @@ export default async function DetalheQuadraPage({ params }: Props) {
             <div>
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Cemitério</dt>
               <dd className="mt-1">
-                <Link href={`/cemiterios/${quadra.cemiterio.id}`} className="text-sm text-primary-600 hover:underline">
-                  {quadra.cemiterio.nome}
+                <Link href={`/cemiterios/${quadra.cemetery.id}`} className="text-sm text-primary-600 hover:underline">
+                  {quadra.cemetery.name}
                 </Link>
               </dd>
             </div>
@@ -80,17 +73,17 @@ export default async function DetalheQuadraPage({ params }: Props) {
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Status</dt>
               <dd className="mt-1"><StatusBadge status={quadra.status} /></dd>
             </div>
-            {quadra.capacidade != null && (
+            {quadra.capacity != null && (
               <div>
                 <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Capacidade</dt>
                 <dd className="mt-1 text-sm text-neutral-900">
-                  {quadra.capacidade.toLocaleString('pt-BR')} jazigos
+                  {quadra.capacity.toLocaleString('pt-BR')} jazigos
                 </dd>
               </div>
             )}
             <div>
               <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Jazigos cadastrados</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{quadra.jazigos?.length ?? 0}</dd>
+              <dd className="mt-1 text-sm text-neutral-900">{quadra.graves?.length ?? 0}</dd>
             </div>
           </dl>
         </div>
@@ -107,7 +100,7 @@ export default async function DetalheQuadraPage({ params }: Props) {
             </Link>
           </div>
 
-          {quadra.jazigos?.length === 0 ? (
+          {quadra.graves?.length === 0 ? (
             <p className="text-sm text-neutral-500 text-center py-8">Nenhum jazigo cadastrado nesta quadra.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -121,10 +114,10 @@ export default async function DetalheQuadraPage({ params }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {quadra.jazigos?.map((j: any) => (
+                  {quadra.graves?.map((j: any) => (
                     <tr key={j.id} className="border-b border-neutral-50 hover:bg-neutral-50">
-                      <td className="py-2 px-3 font-mono font-semibold text-neutral-900">{j.codigo}</td>
-                      <td className="py-2 px-3 text-neutral-600">{jazigoTypeLabel[j.tipo] ?? j.tipo}</td>
+                      <td className="py-2 px-3 font-mono font-semibold text-neutral-900">{j.code}</td>
+                      <td className="py-2 px-3 text-neutral-600">{graveTypeLabel[j.type] ?? j.type}</td>
                       <td className="py-2 px-3">
                         <StatusBadge status={j.status} />
                       </td>

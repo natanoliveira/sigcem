@@ -9,23 +9,23 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const TIPO_LABEL: Record<string, string> = {
-  SIMPLES: 'Simples',
-  DUPLO: 'Duplo',
-  GAVETA: 'Gaveta',
-  OSSUARIO: 'Ossário',
-  PERPETUO: 'Perpétuo',
+  SINGLE: 'Simples',
+  DOUBLE: 'Duplo',
+  DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário',
+  PERPETUAL: 'Perpétuo',
 };
 
 interface Jazigo {
   id: string;
-  codigo: string;
-  tipo: string;
+  code: string;
+  type: string;
   status: string;
-  localizacaoRef: string | null;
-  quadra: {
+  locationRef: string | null;
+  block: {
     id: string;
-    codigo: string;
-    cemiterio: { id: string; nome: string };
+    code: string;
+    cemetery: { id: string; name: string };
   };
 }
 
@@ -49,7 +49,7 @@ export default function JazigosPage() {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (search) params.set('search', search);
       if (statusFilter) params.set('status', statusFilter);
-      const data = await api.get(`/api/v1/jazigos?${params}`);
+      const data = await api.get(`/api/v1/graves?${params}`);
       setResult(data);
     } catch {
       setResult(null);
@@ -67,7 +67,7 @@ export default function JazigosPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await api.delete(`/api/v1/jazigos/${deleteTarget.id}`);
+      await api.delete(`/api/v1/graves/${deleteTarget.id}`);
       setDeleteTarget(null);
       fetchData();
     } catch {
@@ -111,10 +111,10 @@ export default function JazigosPage() {
             className="px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="">Todos os status</option>
-            <option value="DISPONIVEL">Disponível</option>
-            <option value="OCUPADO">Ocupado</option>
-            <option value="RESERVADO">Reservado</option>
-            <option value="INTERDITADO">Interditado</option>
+            <option value="AVAILABLE">Disponível</option>
+            <option value="OCCUPIED">Ocupado</option>
+            <option value="RESERVED">Reservado</option>
+            <option value="BLOCKED">Interditado</option>
           </select>
         </div>
 
@@ -151,17 +151,17 @@ export default function JazigosPage() {
               ) : (
                 result?.data.map((j) => (
                   <tr key={j.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 font-mono font-semibold text-neutral-900">{j.codigo}</td>
-                    <td className="px-4 py-3 text-neutral-600">{TIPO_LABEL[j.tipo] ?? j.tipo}</td>
-                    <td className="px-4 py-3 text-neutral-500 text-xs">{j.localizacaoRef ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono font-semibold text-neutral-900">{j.code}</td>
+                    <td className="px-4 py-3 text-neutral-600">{TIPO_LABEL[j.type] ?? j.type}</td>
+                    <td className="px-4 py-3 text-neutral-500 text-xs">{j.locationRef ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <Link href={`/quadras/${j.quadra.id}`} className="text-primary-600 hover:underline font-mono">
-                        {j.quadra.codigo}
+                      <Link href={`/quadras/${j.block.id}`} className="text-primary-600 hover:underline font-mono">
+                        {j.block.code}
                       </Link>
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/cemiterios/${j.quadra.cemiterio.id}`} className="text-neutral-600 hover:text-primary-600 hover:underline text-xs">
-                        {j.quadra.cemiterio.nome}
+                      <Link href={`/cemiterios/${j.block.cemetery.id}`} className="text-neutral-600 hover:text-primary-600 hover:underline text-xs">
+                        {j.block.cemetery.name}
                       </Link>
                     </td>
                     <td className="px-4 py-3">
@@ -227,7 +227,7 @@ export default function JazigosPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Excluir jazigo"
-        description={`Tem certeza que deseja excluir o jazigo "${deleteTarget?.codigo}"? Esta ação não pode ser desfeita.`}
+        description={`Tem certeza que deseja excluir o jazigo "${deleteTarget?.code}"? Esta ação não pode ser desfeita.`}
         confirmLabel="Excluir"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

@@ -9,11 +9,11 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Deceased {
   id: string;
-  nomeCompleto: string;
-  dataNascimento: string;
-  dataFalecimento: string;
-  naturalidade: string | null;
-  nacionalidade: string | null;
+  fullName: string;
+  birthDate: string;
+  deathDate: string;
+  birthPlace: string | null;
+  nationality: string | null;
 }
 
 interface ApiResponse {
@@ -129,10 +129,10 @@ export default function FalecidosPage() {
               ) : (
                 result?.data.map((d) => (
                   <tr key={d.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-neutral-900">{d.nomeCompleto}</td>
-                    <td className="px-4 py-3 text-neutral-600">{formatDate(d.dataNascimento)}</td>
-                    <td className="px-4 py-3 text-neutral-600">{formatDate(d.dataFalecimento)}</td>
-                    <td className="px-4 py-3 text-neutral-500 text-xs">{d.naturalidade ?? '—'}</td>
+                    <td className="px-4 py-3 font-medium text-neutral-900">{d.fullName}</td>
+                    <td className="px-4 py-3 text-neutral-600">{formatDate(d.birthDate)}</td>
+                    <td className="px-4 py-3 text-neutral-600">{formatDate(d.deathDate)}</td>
+                    <td className="px-4 py-3 text-neutral-500 text-xs">{d.birthPlace ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <Link
@@ -193,7 +193,7 @@ export default function FalecidosPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Excluir registro"
-        description={`Tem certeza que deseja excluir o registro de "${deleteTarget?.nomeCompleto}"?`}
+        description={`Tem certeza que deseja excluir o registro de "${deleteTarget?.fullName}"?`}
         confirmLabel="Excluir"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

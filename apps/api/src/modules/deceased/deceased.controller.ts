@@ -25,7 +25,7 @@ export class DeceasedController {
   constructor(private readonly service: DeceasedService) {}
 
   @Post()
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR')
   create(
     @Body() dto: CreateDeceasedDto,
     @CurrentUser() user: UserPayload,
@@ -35,13 +35,13 @@ export class DeceasedController {
   }
 
   @Get()
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findAll(@Query() query: QueryDeceasedDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findOne(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
@@ -51,7 +51,7 @@ export class DeceasedController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR')
   update(
     @Param('id') id: string,
     @Body() dto: UpdateDeceasedDto,

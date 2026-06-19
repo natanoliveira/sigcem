@@ -4,7 +4,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { BurialType, JazigoStatus } from '@prisma/client';
+import { BurialType, GraveStatus } from '@prisma/client';
 import { PrismaService } from '@shared/database/prisma.service';
 import { AuditService } from '@shared/audit/audit.service';
 import { CreateBurialDto } from './dto/create-burial.dto';
@@ -22,17 +22,17 @@ export class BurialService {
   async inumar(dto: CreateBurialDto, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const [falecido, jazigo] = await Promise.all([
-      db.deceased.findFirst({ where: { id: dto.falecidoId } }),
-      db.jazigo.findFirst({ where: { id: dto.jazigoId } }),
+    const [deceased, grave] = await Promise.all([
+      db.deceased.findFirst({ where: { id: dto.deceasedId } }),
+      db.grave.findFirst({ where: { id: dto.graveId } }),
     ]);
 
-    if (!falecido) throw new NotFoundException(`Falecido ${dto.falecidoId} não encontrado`);
-    if (!jazigo) throw new NotFoundException(`Jazigo ${dto.jazigoId} não encontrado`);
+    if (!deceased) throw new NotFoundException(`Falecido ${dto.deceasedId} não encontrado`);
+    if (!grave) throw new NotFoundException(`Jazigo ${dto.graveId} não encontrado`);
 
-    if (!([JazigoStatus.DISPONIVEL, JazigoStatus.RESERVADO] as JazigoStatus[]).includes(jazigo.status)) {
+    if (!([GraveStatus.AVAILABLE, GraveStatus.RESERVED] as GraveStatus[]).includes(grave.status)) {
       throw new ConflictException(
-        `Jazigo está "${jazigo.status}" — só aceita inumação quando DISPONIVEL ou RESERVADO`,
+        `Jazigo está "${grave.status}" — só aceita inumação quando AVAILABLE ou RESERVED`,
       );
     }
 
@@ -40,36 +40,36 @@ export class BurialService {
       this.prisma.burial.create({
         data: {
           tenantId,
-          falecidoId: dto.falecidoId,
-          jazigoId: dto.jazigoId,
-          tipo: BurialType.INUMACAO,
-          dataEvento: new Date(dto.dataEvento),
-          autorizadoPor: dto.autorizadoPor,
-          funeraria: dto.funeraria,
-          responsavelNome: dto.responsavelNome,
-          responsavelCpf: dto.responsavelCpf,
-          observacoes: dto.observacoes,
+          deceasedId: dto.deceasedId,
+          graveId: dto.graveId,
+          type: BurialType.INHUMATION,
+          eventDate: new Date(dto.eventDate),
+          authorizedBy: dto.authorizedBy,
+          funeralHome: dto.funeralHome,
+          responsibleName: dto.responsibleName,
+          responsibleTaxId: dto.responsibleTaxId,
+          notes: dto.notes,
         },
       }),
-      this.prisma.jazigo.update({
-        where: { id: dto.jazigoId },
-        data: { status: JazigoStatus.OCUPADO },
+      this.prisma.grave.update({
+        where: { id: dto.graveId },
+        data: { status: GraveStatus.OCCUPIED },
       }),
-      this.prisma.jazigoHistorico.create({
+      this.prisma.graveHistory.create({
         data: {
-          jazigoId: dto.jazigoId,
-          statusAnterior: jazigo.status,
-          statusNovo: JazigoStatus.OCUPADO,
-          motivo: `Inumação de ${falecido.nomeCompleto}`,
-          usuarioId: userId,
+          graveId: dto.graveId,
+          previousStatus: grave.status,
+          newStatus: GraveStatus.OCCUPIED,
+          reason: `Inumação de ${deceased.fullName}`,
+          userId,
         },
       }),
     ]);
 
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'create',
-      entidadeTipo: 'Burial', entidadeId: burial.id,
-      dadosNovos: { tipo: 'INUMACAO', falecidoId: dto.falecidoId, jazigoId: dto.jazigoId },
+      tenantId, userId, action: 'create',
+      entityType: 'Burial', entityId: burial.id,
+      newData: { type: 'INHUMATION', deceasedId: dto.deceasedId, graveId: dto.graveId },
       ip,
     });
 
@@ -80,17 +80,17 @@ export class BurialService {
   async exumar(dto: CreateBurialDto, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const [falecido, jazigo] = await Promise.all([
-      db.deceased.findFirst({ where: { id: dto.falecidoId } }),
-      db.jazigo.findFirst({ where: { id: dto.jazigoId } }),
+    const [deceased, grave] = await Promise.all([
+      db.deceased.findFirst({ where: { id: dto.deceasedId } }),
+      db.grave.findFirst({ where: { id: dto.graveId } }),
     ]);
 
-    if (!falecido) throw new NotFoundException(`Falecido ${dto.falecidoId} não encontrado`);
-    if (!jazigo) throw new NotFoundException(`Jazigo ${dto.jazigoId} não encontrado`);
+    if (!deceased) throw new NotFoundException(`Falecido ${dto.deceasedId} não encontrado`);
+    if (!grave) throw new NotFoundException(`Jazigo ${dto.graveId} não encontrado`);
 
-    if (jazigo.status !== JazigoStatus.OCUPADO) {
+    if (grave.status !== GraveStatus.OCCUPIED) {
       throw new ConflictException(
-        `Jazigo está "${jazigo.status}" — exumação só é permitida em jazigo OCUPADO`,
+        `Jazigo está "${grave.status}" — exumação só é permitida em jazigo OCCUPIED`,
       );
     }
 
@@ -98,36 +98,36 @@ export class BurialService {
       this.prisma.burial.create({
         data: {
           tenantId,
-          falecidoId: dto.falecidoId,
-          jazigoId: dto.jazigoId,
-          tipo: BurialType.EXUMACAO,
-          dataEvento: new Date(dto.dataEvento),
-          autorizadoPor: dto.autorizadoPor,
-          funeraria: dto.funeraria,
-          responsavelNome: dto.responsavelNome,
-          responsavelCpf: dto.responsavelCpf,
-          observacoes: dto.observacoes,
+          deceasedId: dto.deceasedId,
+          graveId: dto.graveId,
+          type: BurialType.EXHUMATION,
+          eventDate: new Date(dto.eventDate),
+          authorizedBy: dto.authorizedBy,
+          funeralHome: dto.funeralHome,
+          responsibleName: dto.responsibleName,
+          responsibleTaxId: dto.responsibleTaxId,
+          notes: dto.notes,
         },
       }),
-      this.prisma.jazigo.update({
-        where: { id: dto.jazigoId },
-        data: { status: JazigoStatus.DISPONIVEL },
+      this.prisma.grave.update({
+        where: { id: dto.graveId },
+        data: { status: GraveStatus.AVAILABLE },
       }),
-      this.prisma.jazigoHistorico.create({
+      this.prisma.graveHistory.create({
         data: {
-          jazigoId: dto.jazigoId,
-          statusAnterior: JazigoStatus.OCUPADO,
-          statusNovo: JazigoStatus.DISPONIVEL,
-          motivo: `Exumação de ${falecido.nomeCompleto}`,
-          usuarioId: userId,
+          graveId: dto.graveId,
+          previousStatus: GraveStatus.OCCUPIED,
+          newStatus: GraveStatus.AVAILABLE,
+          reason: `Exumação de ${deceased.fullName}`,
+          userId,
         },
       }),
     ]);
 
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'create',
-      entidadeTipo: 'Burial', entidadeId: burial.id,
-      dadosNovos: { tipo: 'EXUMACAO', falecidoId: dto.falecidoId, jazigoId: dto.jazigoId },
+      tenantId, userId, action: 'create',
+      entityType: 'Burial', entityId: burial.id,
+      newData: { type: 'EXHUMATION', deceasedId: dto.deceasedId, graveId: dto.graveId },
       ip,
     });
 
@@ -138,127 +138,127 @@ export class BurialService {
   async transladar(dto: CreateTransladoDto, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    if (dto.jazigoOrigemId === dto.jazigoDestinoId) {
+    if (dto.sourceGraveId === dto.targetGraveId) {
       throw new BadRequestException('Jazigo de origem e destino devem ser diferentes');
     }
 
-    const [falecido, jazigoOrigem, jazigoDestino] = await Promise.all([
-      db.deceased.findFirst({ where: { id: dto.falecidoId } }),
-      db.jazigo.findFirst({ where: { id: dto.jazigoOrigemId } }),
-      db.jazigo.findFirst({ where: { id: dto.jazigoDestinoId } }),
+    const [deceased, sourceGrave, targetGrave] = await Promise.all([
+      db.deceased.findFirst({ where: { id: dto.deceasedId } }),
+      db.grave.findFirst({ where: { id: dto.sourceGraveId } }),
+      db.grave.findFirst({ where: { id: dto.targetGraveId } }),
     ]);
 
-    if (!falecido) throw new NotFoundException(`Falecido ${dto.falecidoId} não encontrado`);
-    if (!jazigoOrigem) throw new NotFoundException(`Jazigo de origem não encontrado`);
-    if (!jazigoDestino) throw new NotFoundException(`Jazigo de destino não encontrado`);
+    if (!deceased) throw new NotFoundException(`Falecido ${dto.deceasedId} não encontrado`);
+    if (!sourceGrave) throw new NotFoundException(`Jazigo de origem não encontrado`);
+    if (!targetGrave) throw new NotFoundException(`Jazigo de destino não encontrado`);
 
-    if (jazigoOrigem.status !== JazigoStatus.OCUPADO) {
+    if (sourceGrave.status !== GraveStatus.OCCUPIED) {
       throw new ConflictException(
-        `Jazigo de origem está "${jazigoOrigem.status}" — translado exige status OCUPADO na origem`,
+        `Jazigo de origem está "${sourceGrave.status}" — translado exige status OCCUPIED na origem`,
       );
     }
 
-    if (!([JazigoStatus.DISPONIVEL, JazigoStatus.RESERVADO] as JazigoStatus[]).includes(jazigoDestino.status)) {
+    if (!([GraveStatus.AVAILABLE, GraveStatus.RESERVED] as GraveStatus[]).includes(targetGrave.status)) {
       throw new ConflictException(
-        `Jazigo de destino está "${jazigoDestino.status}" — translado exige DISPONIVEL ou RESERVADO no destino`,
+        `Jazigo de destino está "${targetGrave.status}" — translado exige AVAILABLE ou RESERVED no destino`,
       );
     }
 
     // Tudo em uma única transaction — rollback automático se qualquer etapa falhar
-    const [burialExumacao, burialInumacao] = await this.prisma.$transaction([
+    const [burialExhumation, burialInhumation] = await this.prisma.$transaction([
       // Burial de exumação na origem
       this.prisma.burial.create({
         data: {
           tenantId,
-          falecidoId: dto.falecidoId,
-          jazigoId: dto.jazigoOrigemId,
-          tipo: BurialType.EXUMACAO,
-          dataEvento: new Date(dto.dataEvento),
-          autorizadoPor: dto.autorizadoPor,
-          funeraria: dto.funeraria,
-          responsavelNome: dto.responsavelNome,
-          responsavelCpf: dto.responsavelCpf,
-          observacoes: `Translado para jazigo ${dto.jazigoDestinoId}. ${dto.observacoes ?? ''}`.trim(),
+          deceasedId: dto.deceasedId,
+          graveId: dto.sourceGraveId,
+          type: BurialType.EXHUMATION,
+          eventDate: new Date(dto.eventDate),
+          authorizedBy: dto.authorizedBy,
+          funeralHome: dto.funeralHome,
+          responsibleName: dto.responsibleName,
+          responsibleTaxId: dto.responsibleTaxId,
+          notes: `Translado para jazigo ${dto.targetGraveId}. ${dto.notes ?? ''}`.trim(),
         },
       }),
       // Burial de inumação no destino
       this.prisma.burial.create({
         data: {
           tenantId,
-          falecidoId: dto.falecidoId,
-          jazigoId: dto.jazigoDestinoId,
-          tipo: BurialType.INUMACAO,
-          dataEvento: new Date(dto.dataEvento),
-          autorizadoPor: dto.autorizadoPor,
-          funeraria: dto.funeraria,
-          responsavelNome: dto.responsavelNome,
-          responsavelCpf: dto.responsavelCpf,
-          observacoes: `Translado do jazigo ${dto.jazigoOrigemId}. ${dto.observacoes ?? ''}`.trim(),
+          deceasedId: dto.deceasedId,
+          graveId: dto.targetGraveId,
+          type: BurialType.INHUMATION,
+          eventDate: new Date(dto.eventDate),
+          authorizedBy: dto.authorizedBy,
+          funeralHome: dto.funeralHome,
+          responsibleName: dto.responsibleName,
+          responsibleTaxId: dto.responsibleTaxId,
+          notes: `Translado do jazigo ${dto.sourceGraveId}. ${dto.notes ?? ''}`.trim(),
         },
       }),
-      // Status origem: OCUPADO → DISPONIVEL
-      this.prisma.jazigo.update({
-        where: { id: dto.jazigoOrigemId },
-        data: { status: JazigoStatus.DISPONIVEL },
+      // Status origem: OCCUPIED → AVAILABLE
+      this.prisma.grave.update({
+        where: { id: dto.sourceGraveId },
+        data: { status: GraveStatus.AVAILABLE },
       }),
-      // Status destino: DISPONIVEL/RESERVADO → OCUPADO
-      this.prisma.jazigo.update({
-        where: { id: dto.jazigoDestinoId },
-        data: { status: JazigoStatus.OCUPADO },
+      // Status destino: AVAILABLE/RESERVED → OCCUPIED
+      this.prisma.grave.update({
+        where: { id: dto.targetGraveId },
+        data: { status: GraveStatus.OCCUPIED },
       }),
       // Histórico origem
-      this.prisma.jazigoHistorico.create({
+      this.prisma.graveHistory.create({
         data: {
-          jazigoId: dto.jazigoOrigemId,
-          statusAnterior: JazigoStatus.OCUPADO,
-          statusNovo: JazigoStatus.DISPONIVEL,
-          motivo: `Translado de ${falecido.nomeCompleto} para outro jazigo`,
-          usuarioId: userId,
+          graveId: dto.sourceGraveId,
+          previousStatus: GraveStatus.OCCUPIED,
+          newStatus: GraveStatus.AVAILABLE,
+          reason: `Translado de ${deceased.fullName} para outro jazigo`,
+          userId,
         },
       }),
       // Histórico destino
-      this.prisma.jazigoHistorico.create({
+      this.prisma.graveHistory.create({
         data: {
-          jazigoId: dto.jazigoDestinoId,
-          statusAnterior: jazigoDestino.status,
-          statusNovo: JazigoStatus.OCUPADO,
-          motivo: `Translado de ${falecido.nomeCompleto} da origem`,
-          usuarioId: userId,
+          graveId: dto.targetGraveId,
+          previousStatus: targetGrave.status,
+          newStatus: GraveStatus.OCCUPIED,
+          reason: `Translado de ${deceased.fullName} da origem`,
+          userId,
         },
       }),
     ]);
 
     // T-031 — audit do translado
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'create',
-      entidadeTipo: 'Burial', entidadeId: burialInumacao.id,
-      dadosNovos: {
-        tipo: 'TRANSLADO',
-        falecidoId: dto.falecidoId,
-        jazigoOrigemId: dto.jazigoOrigemId,
-        jazigoDestinoId: dto.jazigoDestinoId,
-        burialExumacaoId: burialExumacao.id,
-        burialInumacaoId: burialInumacao.id,
+      tenantId, userId, action: 'create',
+      entityType: 'Burial', entityId: burialInhumation.id,
+      newData: {
+        type: 'TRANSFER',
+        deceasedId: dto.deceasedId,
+        sourceGraveId: dto.sourceGraveId,
+        targetGraveId: dto.targetGraveId,
+        burialExhumationId: burialExhumation.id,
+        burialInhumationId: burialInhumation.id,
       },
       ip,
     });
 
-    return { burialExumacao, burialInumacao };
+    return { burialExhumation, burialInhumation };
   }
 
   async findAll(query: QueryBurialDto, tenantId: string) {
     const db = this.prisma.forTenant(tenantId);
-    const { falecidoId, jazigoId, tipo, dataInicio, dataFim, page = 1, limit = 20 } = query;
+    const { deceasedId, graveId, type, startDate, endDate, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (falecidoId) where.falecidoId = falecidoId;
-    if (jazigoId) where.jazigoId = jazigoId;
-    if (tipo) where.tipo = tipo;
-    if (dataInicio || dataFim) {
-      where.dataEvento = {};
-      if (dataInicio) where.dataEvento.gte = new Date(dataInicio);
-      if (dataFim) where.dataEvento.lte = new Date(dataFim);
+    if (deceasedId) where.deceasedId = deceasedId;
+    if (graveId) where.graveId = graveId;
+    if (type) where.type = type;
+    if (startDate || endDate) {
+      where.eventDate = {};
+      if (startDate) where.eventDate.gte = new Date(startDate);
+      if (endDate) where.eventDate.lte = new Date(endDate);
     }
 
     const [data, total] = await Promise.all([
@@ -266,14 +266,14 @@ export class BurialService {
         where,
         skip,
         take: limit,
-        orderBy: { dataEvento: 'desc' },
+        orderBy: { eventDate: 'desc' },
         include: {
-          falecido: { select: { id: true, nomeCompleto: true } },
-          jazigo: {
+          deceased: { select: { id: true, fullName: true } },
+          grave: {
             select: {
               id: true,
-              codigo: true,
-              quadra: { select: { codigo: true, cemiterio: { select: { nome: true } } } },
+              code: true,
+              block: { select: { code: true, cemetery: { select: { name: true } } } },
             },
           },
         },
@@ -291,14 +291,14 @@ export class BurialService {
     const burial = await this.prisma.forTenant(tenantId).burial.findFirst({
       where: { id },
       include: {
-        falecido: { select: { id: true, nomeCompleto: true, dataNascimento: true, dataFalecimento: true } },
-        jazigo: {
+        deceased: { select: { id: true, fullName: true, birthDate: true, deathDate: true } },
+        grave: {
           select: {
             id: true,
-            codigo: true,
-            tipo: true,
+            code: true,
+            type: true,
             status: true,
-            quadra: { select: { codigo: true, cemiterio: { select: { id: true, nome: true } } } },
+            block: { select: { code: true, cemetery: { select: { id: true, name: true } } } },
           },
         },
       },

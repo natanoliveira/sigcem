@@ -6,18 +6,18 @@ import { api } from '@/lib/api';
 
 interface Cemetery {
   id: string;
-  nome: string;
+  name: string;
 }
 
-interface QuadraFormData {
-  cemiterioId: string;
-  codigo: string;
-  nome: string;
-  capacidade: string;
+interface BlockFormData {
+  cemeteryId: string;
+  code: string;
+  name: string;
+  capacity: string;
 }
 
 interface QuadraFormProps {
-  initialData?: Partial<QuadraFormData> & { id?: string };
+  initialData?: Partial<BlockFormData> & { id?: string };
   mode: 'create' | 'edit';
   fixedCemiterioId?: string;
 }
@@ -27,11 +27,11 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [cemeteries, setCemeteries] = useState<Cemetery[]>([]);
-  const [form, setForm] = useState<QuadraFormData>({
-    cemiterioId: fixedCemiterioId ?? initialData?.cemiterioId ?? '',
-    codigo: initialData?.codigo ?? '',
-    nome: initialData?.nome ?? '',
-    capacidade: initialData?.capacidade ?? '',
+  const [form, setForm] = useState<BlockFormData>({
+    cemeteryId: fixedCemiterioId ?? initialData?.cemeteryId ?? '',
+    code: initialData?.code ?? '',
+    name: initialData?.name ?? '',
+    capacity: initialData?.capacity ?? '',
   });
 
   useEffect(() => {
@@ -51,18 +51,18 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
     setError('');
 
     const payload = {
-      cemiterioId: form.cemiterioId,
-      codigo: form.codigo.trim().toUpperCase(),
-      nome: form.nome.trim() || undefined,
-      capacidade: form.capacidade ? parseInt(form.capacidade, 10) : undefined,
+      cemeteryId: form.cemeteryId,
+      code: form.code.trim().toUpperCase(),
+      name: form.name.trim() || undefined,
+      capacity: form.capacity ? parseInt(form.capacity, 10) : undefined,
     };
 
     try {
       if (mode === 'create') {
-        await api.post('/api/v1/quadras', payload);
+        await api.post('/api/v1/blocks', payload);
       } else {
-        const { cemiterioId: _, ...updatePayload } = payload;
-        await api.patch(`/api/v1/quadras/${initialData!.id}`, updatePayload);
+        const { cemeteryId: _, ...updatePayload } = payload;
+        await api.patch(`/api/v1/blocks/${initialData!.id}`, updatePayload);
       }
       router.push(fixedCemiterioId ? `/cemiterios/${fixedCemiterioId}` : '/quadras');
       router.refresh();
@@ -88,15 +88,15 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
               Cemitério <span className="text-red-500">*</span>
             </label>
             <select
-              name="cemiterioId"
-              value={form.cemiterioId}
+              name="cemeteryId"
+              value={form.cemeteryId}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">Selecione um cemitério</option>
               {cemeteries.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -108,8 +108,8 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
           </label>
           <input
             type="text"
-            name="codigo"
-            value={form.codigo}
+            name="code"
+            value={form.code}
             onChange={handleChange}
             required
             maxLength={20}
@@ -122,8 +122,8 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
           <label className="block text-sm font-medium text-neutral-700 mb-1">Nome</label>
           <input
             type="text"
-            name="nome"
-            value={form.nome}
+            name="name"
+            value={form.name}
             onChange={handleChange}
             maxLength={100}
             placeholder="Nome descritivo (opcional)"
@@ -137,8 +137,8 @@ export function QuadraForm({ initialData, mode, fixedCemiterioId }: QuadraFormPr
           </label>
           <input
             type="number"
-            name="capacidade"
-            value={form.capacidade}
+            name="capacity"
+            value={form.capacity}
             onChange={handleChange}
             min={0}
             step={1}

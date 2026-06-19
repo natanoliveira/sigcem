@@ -1,25 +1,25 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum, MaxLength } from 'class-validator';
-import { JazigoType } from '@prisma/client';
+import { GraveType } from '@prisma/client';
 
-export class CreateJazigoDto {
+export class CreateGraveDto {
   @IsString()
   @IsNotEmpty({ message: 'Quadra é obrigatória' })
-  quadraId: string;
+  blockId: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Código é obrigatório' })
   @MaxLength(20)
-  codigo: string;
+  code: string;
 
-  @IsEnum(JazigoType)
-  tipo: JazigoType;
+  @IsEnum(GraveType)
+  type: GraveType;
 
   @IsString()
   @IsOptional()
   @MaxLength(200)
-  localizacaoRef?: string;
+  locationRef?: string;
 
   @IsString()
   @IsOptional()
-  observacoes?: string;
+  notes?: string;
 }

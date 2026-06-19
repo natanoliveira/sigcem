@@ -7,7 +7,7 @@ import { JazigoForm } from '@/components/jazigo/jazigo-form';
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function getJazigo(id: string, token: string) {
-  const res = await fetch(`${API_URL}/api/v1/jazigos/${id}`, {
+  const res = await fetch(`${API_URL}/api/v1/graves/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
@@ -30,11 +30,11 @@ export default async function EditarJazigoPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Editar jazigo"
-        description={`${jazigo.codigo} — Quadra ${jazigo.quadra.codigo}`}
+        description={`${jazigo.code} — Quadra ${jazigo.block.code}`}
         breadcrumbs={[
           { label: 'Estrutura' },
           { label: 'Jazigos', href: '/jazigos' },
-          { label: jazigo.codigo, href: `/jazigos/${id}` },
+          { label: jazigo.code, href: `/jazigos/${id}` },
           { label: 'Editar' },
         ]}
       />
@@ -42,11 +42,11 @@ export default async function EditarJazigoPage({ params }: Props) {
         mode="edit"
         initialData={{
           id: jazigo.id,
-          quadraId: jazigo.quadraId,
-          codigo: jazigo.codigo,
-          tipo: jazigo.tipo,
-          localizacaoRef: jazigo.localizacaoRef ?? '',
-          observacoes: jazigo.observacoes ?? '',
+          blockId: jazigo.blockId,
+          code: jazigo.code,
+          type: jazigo.type,
+          locationRef: jazigo.locationRef ?? '',
+          notes: jazigo.notes ?? '',
         }}
       />
     </div>

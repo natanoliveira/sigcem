@@ -4,20 +4,20 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { JazigoStatus } from '@prisma/client';
+import { GraveStatus } from '@prisma/client';
 import { PrismaService } from '@shared/database/prisma.service';
 import { AuditService } from '@shared/audit/audit.service';
-import { CreateJazigoDto } from './dto/create-jazigo.dto';
-import { UpdateJazigoDto } from './dto/update-jazigo.dto';
-import { QueryJazigoDto } from './dto/query-jazigo.dto';
-import { ChangeStatusJazigoDto } from './dto/change-status-jazigo.dto';
+import { CreateGraveDto } from './dto/create-jazigo.dto';
+import { UpdateGraveDto } from './dto/update-jazigo.dto';
+import { QueryGraveDto } from './dto/query-jazigo.dto';
+import { ChangeStatusGraveDto } from './dto/change-status-jazigo.dto';
 
 // Transições permitidas por status atual
-const ALLOWED_TRANSITIONS: Record<JazigoStatus, JazigoStatus[]> = {
-  DISPONIVEL: [JazigoStatus.OCUPADO, JazigoStatus.RESERVADO, JazigoStatus.INTERDITADO],
-  RESERVADO:  [JazigoStatus.OCUPADO, JazigoStatus.DISPONIVEL, JazigoStatus.INTERDITADO],
-  OCUPADO:    [JazigoStatus.DISPONIVEL, JazigoStatus.INTERDITADO],
-  INTERDITADO:[JazigoStatus.DISPONIVEL],
+const ALLOWED_TRANSITIONS: Record<GraveStatus, GraveStatus[]> = {
+  AVAILABLE: [GraveStatus.OCCUPIED, GraveStatus.RESERVED, GraveStatus.BLOCKED],
+  RESERVED:  [GraveStatus.OCCUPIED, GraveStatus.AVAILABLE, GraveStatus.BLOCKED],
+  OCCUPIED:  [GraveStatus.AVAILABLE, GraveStatus.BLOCKED],
+  BLOCKED:   [GraveStatus.AVAILABLE],
 };
 
 @Injectable()
@@ -27,70 +27,70 @@ export class JazigoService {
     private audit: AuditService,
   ) {}
 
-  async create(dto: CreateJazigoDto, tenantId: string, userId: string, ip?: string) {
+  async create(dto: CreateGraveDto, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const quadra = await db.quadra.findFirst({ where: { id: dto.quadraId } });
-    if (!quadra) throw new NotFoundException(`Quadra ${dto.quadraId} não encontrada`);
+    const block = await db.block.findFirst({ where: { id: dto.blockId } });
+    if (!block) throw new NotFoundException(`Quadra ${dto.blockId} não encontrada`);
 
-    const existing = await db.jazigo.findFirst({
-      where: { quadraId: dto.quadraId, codigo: dto.codigo },
+    const existing = await db.grave.findFirst({
+      where: { blockId: dto.blockId, code: dto.code },
     });
     if (existing) {
       throw new ConflictException(
-        `Já existe um jazigo com código "${dto.codigo}" nesta quadra`,
+        `Já existe um jazigo com código "${dto.code}" nesta quadra`,
       );
     }
 
-    const jazigo = await db.jazigo.create({ data: dto as any });
+    const grave = await db.grave.create({ data: dto as any });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'create',
-      entidadeTipo: 'Jazigo',
-      entidadeId: jazigo.id,
-      dadosNovos: jazigo,
+      userId,
+      action: 'create',
+      entityType: 'Jazigo',
+      entityId: grave.id,
+      newData: grave,
       ip,
     });
 
-    return jazigo;
+    return grave;
   }
 
-  async findAll(query: QueryJazigoDto, tenantId: string) {
+  async findAll(query: QueryGraveDto, tenantId: string) {
     const db = this.prisma.forTenant(tenantId);
-    const { quadraId, cemiterioId, status, tipo, search, page = 1, limit = 50 } = query;
+    const { blockId, cemeteryId, status, type, search, page = 1, limit = 50 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (quadraId) where.quadraId = quadraId;
+    if (blockId) where.blockId = blockId;
     if (status) where.status = status;
-    if (tipo) where.tipo = tipo;
-    if (cemiterioId) where.quadra = { cemiterioId };
+    if (type) where.type = type;
+    if (cemeteryId) where.block = { cemeteryId };
     if (search) {
       where.OR = [
-        { codigo: { contains: search, mode: 'insensitive' } },
-        { localizacaoRef: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { locationRef: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     const [data, total] = await Promise.all([
-      db.jazigo.findMany({
+      db.grave.findMany({
         where,
         skip,
         take: limit,
-        orderBy: [{ quadraId: 'asc' }, { codigo: 'asc' }],
+        orderBy: [{ blockId: 'asc' }, { code: 'asc' }],
         include: {
-          quadra: {
+          block: {
             select: {
               id: true,
-              codigo: true,
-              cemiterio: { select: { id: true, nome: true } },
+              code: true,
+              cemetery: { select: { id: true, name: true } },
             },
           },
         },
       }),
-      db.jazigo.count({ where }),
+      db.grave.count({ where }),
     ]);
 
     return {
@@ -100,60 +100,60 @@ export class JazigoService {
   }
 
   async findOne(id: string, tenantId: string) {
-    const jazigo = await this.prisma.forTenant(tenantId).jazigo.findFirst({
+    const grave = await this.prisma.forTenant(tenantId).grave.findFirst({
       where: { id },
       include: {
-        quadra: {
+        block: {
           select: {
             id: true,
-            codigo: true,
-            cemiterio: { select: { id: true, nome: true } },
+            code: true,
+            cemetery: { select: { id: true, name: true } },
           },
         },
-        historico: {
-          orderBy: { criadoEm: 'desc' },
+        history: {
+          orderBy: { createdAt: 'desc' },
           take: 10,
         },
       },
     });
 
-    if (!jazigo) throw new NotFoundException(`Jazigo ${id} não encontrado`);
-    return jazigo;
+    if (!grave) throw new NotFoundException(`Jazigo ${id} não encontrado`);
+    return grave;
   }
 
   async update(
     id: string,
-    dto: UpdateJazigoDto,
+    dto: UpdateGraveDto,
     tenantId: string,
     userId: string,
     ip?: string,
   ) {
     const db = this.prisma.forTenant(tenantId);
 
-    const current = await db.jazigo.findFirst({ where: { id } });
+    const current = await db.grave.findFirst({ where: { id } });
     if (!current) throw new NotFoundException(`Jazigo ${id} não encontrado`);
 
-    if (dto.codigo && dto.codigo !== current.codigo) {
-      const conflict = await db.jazigo.findFirst({
-        where: { quadraId: current.quadraId, codigo: dto.codigo },
+    if (dto.code && dto.code !== current.code) {
+      const conflict = await db.grave.findFirst({
+        where: { blockId: current.blockId, code: dto.code },
       });
       if (conflict) {
         throw new ConflictException(
-          `Já existe um jazigo com código "${dto.codigo}" nesta quadra`,
+          `Já existe um jazigo com código "${dto.code}" nesta quadra`,
         );
       }
     }
 
-    const updated = await db.jazigo.update({ where: { id }, data: dto });
+    const updated = await db.grave.update({ where: { id }, data: dto });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'update',
-      entidadeTipo: 'Jazigo',
-      entidadeId: id,
-      dadosAnteriores: current,
-      dadosNovos: updated,
+      userId,
+      action: 'update',
+      entityType: 'Jazigo',
+      entityId: id,
+      previousData: current,
+      newData: updated,
       ip,
     });
 
@@ -163,48 +163,48 @@ export class JazigoService {
   // T-020 — máquina de estados
   async changeStatus(
     id: string,
-    dto: ChangeStatusJazigoDto,
+    dto: ChangeStatusGraveDto,
     tenantId: string,
     userId: string,
     ip?: string,
   ) {
     const db = this.prisma.forTenant(tenantId);
 
-    const jazigo = await db.jazigo.findFirst({ where: { id } });
-    if (!jazigo) throw new NotFoundException(`Jazigo ${id} não encontrado`);
+    const grave = await db.grave.findFirst({ where: { id } });
+    if (!grave) throw new NotFoundException(`Jazigo ${id} não encontrado`);
 
-    const allowed = ALLOWED_TRANSITIONS[jazigo.status];
+    const allowed = ALLOWED_TRANSITIONS[grave.status];
     if (!allowed.includes(dto.status)) {
       throw new BadRequestException(
-        `Transição de "${jazigo.status}" para "${dto.status}" não é permitida. ` +
+        `Transição de "${grave.status}" para "${dto.status}" não é permitida. ` +
         `Transições válidas: ${allowed.join(', ')}`,
       );
     }
 
     const [updated] = await this.prisma.$transaction([
-      this.prisma.jazigo.update({
+      this.prisma.grave.update({
         where: { id },
         data: { status: dto.status },
       }),
-      this.prisma.jazigoHistorico.create({
+      this.prisma.graveHistory.create({
         data: {
-          jazigoId: id,
-          statusAnterior: jazigo.status,
-          statusNovo: dto.status,
-          motivo: dto.motivo,
-          usuarioId: userId,
+          graveId: id,
+          previousStatus: grave.status,
+          newStatus: dto.status,
+          reason: dto.reason,
+          userId,
         },
       }),
     ]);
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'update',
-      entidadeTipo: 'Jazigo',
-      entidadeId: id,
-      dadosAnteriores: { status: jazigo.status },
-      dadosNovos: { status: dto.status, motivo: dto.motivo },
+      userId,
+      action: 'update',
+      entityType: 'Jazigo',
+      entityId: id,
+      previousData: { status: grave.status },
+      newData: { status: dto.status, reason: dto.reason },
       ip,
     });
 
@@ -213,38 +213,38 @@ export class JazigoService {
 
   // T-021 — histórico de status
   async findHistorico(id: string, tenantId: string) {
-    const jazigo = await this.prisma.forTenant(tenantId).jazigo.findFirst({
+    const grave = await this.prisma.forTenant(tenantId).grave.findFirst({
       where: { id },
     });
-    if (!jazigo) throw new NotFoundException(`Jazigo ${id} não encontrado`);
+    if (!grave) throw new NotFoundException(`Jazigo ${id} não encontrado`);
 
-    return this.prisma.jazigoHistorico.findMany({
-      where: { jazigoId: id },
-      orderBy: { criadoEm: 'desc' },
+    return this.prisma.graveHistory.findMany({
+      where: { graveId: id },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async remove(id: string, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const current = await db.jazigo.findFirst({ where: { id } });
+    const current = await db.grave.findFirst({ where: { id } });
     if (!current) throw new NotFoundException(`Jazigo ${id} não encontrado`);
 
-    if (current.status === JazigoStatus.OCUPADO) {
+    if (current.status === GraveStatus.OCCUPIED) {
       throw new BadRequestException(
-        'Não é possível excluir um jazigo com status OCUPADO',
+        'Não é possível excluir um jazigo com status OCCUPIED',
       );
     }
 
-    await db.jazigo.delete({ where: { id } });
+    await db.grave.delete({ where: { id } });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'delete',
-      entidadeTipo: 'Jazigo',
-      entidadeId: id,
-      dadosAnteriores: current,
+      userId,
+      action: 'delete',
+      entityType: 'Jazigo',
+      entityId: id,
+      previousData: current,
       ip,
     });
   }

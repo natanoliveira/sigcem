@@ -5,33 +5,33 @@ import { useRouter } from 'next/navigation';
 import { Search, ChevronRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
-type BurialType = 'INUMACAO' | 'EXUMACAO' | 'TRANSLADO';
+type BurialType = 'INHUMATION' | 'EXHUMATION' | 'TRANSFER';
 
-interface Deceased { id: string; nomeCompleto: string; dataFalecimento: string }
-interface Jazigo {
-  id: string; codigo: string; status: string; tipo: string;
-  quadra: { codigo: string; cemiterio: { nome: string } };
+interface Deceased { id: string; fullName: string; deathDate: string }
+interface Grave {
+  id: string; code: string; status: string; type: string;
+  block: { code: string; cemetery: { name: string } };
 }
 
 type Step = 'tipo' | 'falecido' | 'jazigo' | 'destino' | 'detalhes' | 'confirmar';
 
 const TYPE_CONFIG = {
-  INUMACAO: {
+  INHUMATION: {
     label: 'Inumação',
     desc: 'Primeiro sepultamento do falecido',
-    jazigoStatus: ['DISPONIVEL', 'RESERVADO'],
+    graveStatus: ['AVAILABLE', 'RESERVED'],
     color: 'blue',
   },
-  EXUMACAO: {
+  EXHUMATION: {
     label: 'Exumação',
     desc: 'Retirada de restos mortais do jazigo',
-    jazigoStatus: ['OCUPADO'],
+    graveStatus: ['OCCUPIED'],
     color: 'amber',
   },
-  TRANSLADO: {
+  TRANSFER: {
     label: 'Translado',
     desc: 'Transferência entre jazigos',
-    jazigoStatus: ['OCUPADO'],
+    graveStatus: ['OCCUPIED'],
     color: 'purple',
   },
 };
@@ -45,20 +45,20 @@ export function BurialWizard() {
   const [step, setStep] = useState<Step>('tipo');
   const [tipo, setTipo] = useState<BurialType | null>(null);
   const [falecido, setFalecido] = useState<Deceased | null>(null);
-  const [jazigo, setJazigo] = useState<Jazigo | null>(null);
-  const [jazigoDestino, setJazigoDestino] = useState<Jazigo | null>(null);
+  const [jazigo, setJazigo] = useState<Grave | null>(null);
+  const [jazigoDestino, setJazigoDestino] = useState<Grave | null>(null);
 
   const [deceasedSearch, setDeceasedSearch] = useState('');
   const [deceasedResults, setDeceasedResults] = useState<Deceased[]>([]);
   const [jazigoSearch, setJazigoSearch] = useState('');
-  const [jazigoResults, setJazigoResults] = useState<Jazigo[]>([]);
+  const [jazigoResults, setJazigoResults] = useState<Grave[]>([]);
 
   const [form, setForm] = useState({
-    dataEvento: new Date().toISOString().split('T')[0],
-    autorizadoPor: '',
-    funeraria: '',
-    responsavelNome: '',
-    observacoes: '',
+    eventDate: new Date().toISOString().split('T')[0],
+    authorizedBy: '',
+    funeralHome: '',
+    responsibleName: '',
+    notes: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -70,11 +70,11 @@ export function BurialWizard() {
     setDeceasedResults(r.data ?? []);
   }
 
-  async function searchJazigo(q: string, statusFilter: string[]) {
+  async function searchGrave(q: string, statusFilter: string[]) {
     const params = new URLSearchParams({ limit: '20' });
     if (q) params.set('search', q);
     statusFilter.forEach((s) => params.append('status', s));
-    const r = await api.get(`/api/v1/jazigos?${params}`);
+    const r = await api.get(`/api/v1/graves?${params}`);
     setJazigoResults(r.data ?? []);
   }
 
@@ -82,27 +82,27 @@ export function BurialWizard() {
     setSubmitting(true);
     setError('');
     try {
-      if (tipo === 'TRANSLADO') {
-        await api.post('/api/v1/burials/translado', {
-          falecidoId: falecido!.id,
-          jazigoOrigemId: jazigo!.id,
-          jazigoDestinoId: jazigoDestino!.id,
-          dataEvento: form.dataEvento,
-          autorizadoPor: form.autorizadoPor,
-          funeraria: form.funeraria || undefined,
-          responsavelNome: form.responsavelNome || undefined,
-          observacoes: form.observacoes || undefined,
+      if (tipo === 'TRANSFER') {
+        await api.post('/api/v1/burials/transfer', {
+          deceasedId: falecido!.id,
+          sourceGraveId: jazigo!.id,
+          targetGraveId: jazigoDestino!.id,
+          eventDate: form.eventDate,
+          authorizedBy: form.authorizedBy,
+          funeralHome: form.funeralHome || undefined,
+          responsibleName: form.responsibleName || undefined,
+          notes: form.notes || undefined,
         });
       } else {
         await api.post('/api/v1/burials', {
-          falecidoId: falecido!.id,
-          jazigoId: jazigo!.id,
-          tipo,
-          dataEvento: form.dataEvento,
-          autorizadoPor: form.autorizadoPor,
-          funeraria: form.funeraria || undefined,
-          responsavelNome: form.responsavelNome || undefined,
-          observacoes: form.observacoes || undefined,
+          deceasedId: falecido!.id,
+          graveId: jazigo!.id,
+          type: tipo,
+          eventDate: form.eventDate,
+          authorizedBy: form.authorizedBy,
+          funeralHome: form.funeralHome || undefined,
+          responsibleName: form.responsibleName || undefined,
+          notes: form.notes || undefined,
         });
       }
       router.push('/sepultamentos');
@@ -121,7 +121,7 @@ export function BurialWizard() {
       <div className="space-y-4">
         <p className="text-sm text-neutral-600">Selecione o tipo de operação:</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {(Object.entries(TYPE_CONFIG) as [BurialType, typeof TYPE_CONFIG.INUMACAO][]).map(([key, cfg]) => (
+          {(Object.entries(TYPE_CONFIG) as [BurialType, typeof TYPE_CONFIG.INHUMATION][]).map(([key, cfg]) => (
             <button
               key={key}
               onClick={() => { setTipo(key); setStep('falecido'); }}
@@ -158,11 +158,11 @@ export function BurialWizard() {
             {deceasedResults.map((d) => (
               <button
                 key={d.id}
-                onClick={() => { setFalecido(d); setStep('jazigo'); searchJazigo('', typeConfig.jazigoStatus); }}
+                onClick={() => { setFalecido(d); setStep('jazigo'); searchGrave('', typeConfig.graveStatus); }}
                 className="w-full text-left px-4 py-3 hover:bg-neutral-50 transition-colors"
               >
-                <p className="text-sm font-medium text-neutral-900">{d.nomeCompleto}</p>
-                <p className="text-xs text-neutral-500 mt-0.5">Falecido em {formatDate(d.dataFalecimento)}</p>
+                <p className="text-sm font-medium text-neutral-900">{d.fullName}</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Falecido em {formatDate(d.deathDate)}</p>
               </button>
             ))}
           </div>
@@ -176,7 +176,7 @@ export function BurialWizard() {
 
   // ── Step: Jazigo (origem para exumação/translado, destino para inumação) ──
   if (step === 'jazigo') {
-    const label = tipo === 'INUMACAO'
+    const label = tipo === 'INHUMATION'
       ? 'Selecione o jazigo (deve estar disponível)'
       : 'Selecione o jazigo de origem (deve estar ocupado)';
 
@@ -184,14 +184,14 @@ export function BurialWizard() {
       <div className="space-y-4">
         <StepHeader tipo={tipo!} step={2} label={label} onBack={() => setStep('falecido')} />
         <div className="p-3 bg-neutral-50 rounded-lg text-sm text-neutral-700">
-          Falecido: <span className="font-medium">{falecido!.nomeCompleto}</span>
+          Falecido: <span className="font-medium">{falecido!.fullName}</span>
         </div>
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             type="text"
             value={jazigoSearch}
-            onChange={(e) => { setJazigoSearch(e.target.value); searchJazigo(e.target.value, typeConfig.jazigoStatus); }}
+            onChange={(e) => { setJazigoSearch(e.target.value); searchGrave(e.target.value, typeConfig.graveStatus); }}
             placeholder="Código ou localização..."
             className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
@@ -203,17 +203,17 @@ export function BurialWizard() {
                 key={j.id}
                 onClick={() => {
                   setJazigo(j);
-                  setStep(tipo === 'TRANSLADO' ? 'destino' : 'detalhes');
-                  if (tipo === 'TRANSLADO') {
+                  setStep(tipo === 'TRANSFER' ? 'destino' : 'detalhes');
+                  if (tipo === 'TRANSFER') {
                     setJazigoSearch('');
-                    searchJazigo('', ['DISPONIVEL', 'RESERVADO']);
+                    searchGrave('', ['AVAILABLE', 'RESERVED']);
                   }
                 }}
                 className="w-full text-left px-4 py-3 hover:bg-neutral-50 transition-colors"
               >
-                <p className="text-sm font-medium font-mono text-neutral-900">{j.codigo}</p>
+                <p className="text-sm font-medium font-mono text-neutral-900">{j.code}</p>
                 <p className="text-xs text-neutral-500 mt-0.5">
-                  {j.quadra.cemiterio.nome} — Quadra {j.quadra.codigo} · {j.status}
+                  {j.block.cemetery.name} — Quadra {j.block.code} · {j.status}
                 </p>
               </button>
             ))}
@@ -229,15 +229,15 @@ export function BurialWizard() {
       <div className="space-y-4">
         <StepHeader tipo={tipo!} step={3} label="Selecione o jazigo de destino (deve estar disponível)" onBack={() => setStep('jazigo')} />
         <div className="p-3 bg-neutral-50 rounded-lg text-sm text-neutral-700 space-y-1">
-          <p>Falecido: <span className="font-medium">{falecido!.nomeCompleto}</span></p>
-          <p>Origem: <span className="font-mono font-medium">{jazigo!.codigo}</span> — {jazigo!.quadra.cemiterio.nome}</p>
+          <p>Falecido: <span className="font-medium">{falecido!.fullName}</span></p>
+          <p>Origem: <span className="font-mono font-medium">{jazigo!.code}</span> — {jazigo!.block.cemetery.name}</p>
         </div>
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             type="text"
             value={jazigoSearch}
-            onChange={(e) => { setJazigoSearch(e.target.value); searchJazigo(e.target.value, ['DISPONIVEL', 'RESERVADO']); }}
+            onChange={(e) => { setJazigoSearch(e.target.value); searchGrave(e.target.value, ['AVAILABLE', 'RESERVED']); }}
             placeholder="Código do jazigo destino..."
             className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
@@ -248,9 +248,9 @@ export function BurialWizard() {
             onClick={() => { setJazigoDestino(j); setStep('detalhes'); }}
             className="w-full text-left px-4 py-3 bg-white rounded-lg border border-neutral-200 hover:border-primary-400 hover:bg-primary-50 transition-colors"
           >
-            <p className="text-sm font-medium font-mono text-neutral-900">{j.codigo}</p>
+            <p className="text-sm font-medium font-mono text-neutral-900">{j.code}</p>
             <p className="text-xs text-neutral-500 mt-0.5">
-              {j.quadra.cemiterio.nome} — Quadra {j.quadra.codigo} · {j.status}
+              {j.block.cemetery.name} — Quadra {j.block.code} · {j.status}
             </p>
           </button>
         ))}
@@ -260,10 +260,10 @@ export function BurialWizard() {
 
   // ── Step: Detalhes ────────────────────────────────────────────────────────
   if (step === 'detalhes') {
-    const backStep: Step = tipo === 'TRANSLADO' ? 'destino' : 'jazigo';
+    const backStep: Step = tipo === 'TRANSFER' ? 'destino' : 'jazigo';
     return (
       <div className="space-y-4">
-        <StepHeader tipo={tipo!} step={tipo === 'TRANSLADO' ? 4 : 3} label="Dados da operação" onBack={() => setStep(backStep)} />
+        <StepHeader tipo={tipo!} step={tipo === 'TRANSFER' ? 4 : 3} label="Dados da operação" onBack={() => setStep(backStep)} />
         <div className="bg-white rounded-xl border border-neutral-200 p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -272,8 +272,8 @@ export function BurialWizard() {
               </label>
               <input
                 type="date"
-                value={form.dataEvento}
-                onChange={(e) => setForm((p) => ({ ...p, dataEvento: e.target.value }))}
+                value={form.eventDate}
+                onChange={(e) => setForm((p) => ({ ...p, eventDate: e.target.value }))}
                 required
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -284,8 +284,8 @@ export function BurialWizard() {
               </label>
               <input
                 type="text"
-                value={form.autorizadoPor}
-                onChange={(e) => setForm((p) => ({ ...p, autorizadoPor: e.target.value }))}
+                value={form.authorizedBy}
+                onChange={(e) => setForm((p) => ({ ...p, authorizedBy: e.target.value }))}
                 placeholder="Nome do responsável"
                 maxLength={200}
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -295,8 +295,8 @@ export function BurialWizard() {
               <label className="block text-sm font-medium text-neutral-700 mb-1">Funerária</label>
               <input
                 type="text"
-                value={form.funeraria}
-                onChange={(e) => setForm((p) => ({ ...p, funeraria: e.target.value }))}
+                value={form.funeralHome}
+                onChange={(e) => setForm((p) => ({ ...p, funeralHome: e.target.value }))}
                 maxLength={200}
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -305,8 +305,8 @@ export function BurialWizard() {
               <label className="block text-sm font-medium text-neutral-700 mb-1">Responsável familiar</label>
               <input
                 type="text"
-                value={form.responsavelNome}
-                onChange={(e) => setForm((p) => ({ ...p, responsavelNome: e.target.value }))}
+                value={form.responsibleName}
+                onChange={(e) => setForm((p) => ({ ...p, responsibleName: e.target.value }))}
                 maxLength={200}
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
@@ -314,8 +314,8 @@ export function BurialWizard() {
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">Observações</label>
               <textarea
-                value={form.observacoes}
-                onChange={(e) => setForm((p) => ({ ...p, observacoes: e.target.value }))}
+                value={form.notes}
+                onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                 rows={2}
                 className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
               />
@@ -325,7 +325,7 @@ export function BurialWizard() {
         <div className="flex justify-end">
           <button
             onClick={() => setStep('confirmar')}
-            disabled={!form.dataEvento || !form.autorizadoPor}
+            disabled={!form.eventDate || !form.authorizedBy}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
             Revisar e confirmar <ChevronRight size={15} />
@@ -338,7 +338,7 @@ export function BurialWizard() {
   // ── Step: Confirmar ───────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <StepHeader tipo={tipo!} step={tipo === 'TRANSLADO' ? 5 : 4} label="Confirmar operação" onBack={() => setStep('detalhes')} />
+      <StepHeader tipo={tipo!} step={tipo === 'TRANSFER' ? 5 : 4} label="Confirmar operação" onBack={() => setStep('detalhes')} />
 
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -346,20 +346,20 @@ export function BurialWizard() {
 
       <div className="bg-white rounded-xl border border-neutral-200 p-5 space-y-3">
         <Row label="Tipo" value={typeConfig.label} />
-        <Row label="Falecido" value={falecido!.nomeCompleto} />
-        {tipo === 'TRANSLADO' ? (
+        <Row label="Falecido" value={falecido!.fullName} />
+        {tipo === 'TRANSFER' ? (
           <>
-            <Row label="Origem" value={`${jazigo!.codigo} — ${jazigo!.quadra.cemiterio.nome}`} />
-            <Row label="Destino" value={`${jazigoDestino!.codigo} — ${jazigoDestino!.quadra.cemiterio.nome}`} />
+            <Row label="Origem" value={`${jazigo!.code} — ${jazigo!.block.cemetery.name}`} />
+            <Row label="Destino" value={`${jazigoDestino!.code} — ${jazigoDestino!.block.cemetery.name}`} />
           </>
         ) : (
-          <Row label="Jazigo" value={`${jazigo!.codigo} — ${jazigo!.quadra.cemiterio.nome}`} />
+          <Row label="Jazigo" value={`${jazigo!.code} — ${jazigo!.block.cemetery.name}`} />
         )}
-        <Row label="Data" value={formatDate(form.dataEvento)} />
-        <Row label="Autorizado por" value={form.autorizadoPor} />
-        {form.funeraria && <Row label="Funerária" value={form.funeraria} />}
-        {form.responsavelNome && <Row label="Resp. familiar" value={form.responsavelNome} />}
-        {form.observacoes && <Row label="Observações" value={form.observacoes} />}
+        <Row label="Data" value={formatDate(form.eventDate)} />
+        <Row label="Autorizado por" value={form.authorizedBy} />
+        {form.funeralHome && <Row label="Funerária" value={form.funeralHome} />}
+        {form.responsibleName && <Row label="Resp. familiar" value={form.responsibleName} />}
+        {form.notes && <Row label="Observações" value={form.notes} />}
       </div>
 
       <div className="flex justify-end gap-3">
@@ -383,7 +383,7 @@ export function BurialWizard() {
 }
 
 function StepHeader({ tipo, step, label, onBack }: { tipo: BurialType; step: number; label: string; onBack: () => void }) {
-  const total = tipo === 'TRANSLADO' ? 5 : 4;
+  const total = tipo === 'TRANSFER' ? 5 : 4;
   return (
     <div className="flex items-center gap-3">
       <button onClick={onBack} className="text-xs text-neutral-500 hover:text-neutral-700">← Voltar</button>

@@ -6,24 +6,24 @@ import { UserPayload } from '@shared/types/user-payload.type';
 import { QueryAuditLogDto } from './dto/query-audit-log.dto';
 
 @Controller('audit-logs')
-@Roles('ADMIN', 'GESTOR')
+@Roles('ADMIN', 'MANAGER')
 export class AuditLogController {
   constructor(private prisma: PrismaService) {}
 
   @Get()
   async findAll(@Query() query: QueryAuditLogDto, @CurrentUser() user: UserPayload) {
-    const { entidadeTipo, entidadeId, usuarioId, acao, dataInicio, dataFim, page = 1, limit = 50 } = query;
+    const { entityType, entityId, userId, action, startDate, endDate, page = 1, limit = 50 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = { tenantId: user.tenantId };
-    if (entidadeTipo) where.entidadeTipo = entidadeTipo;
-    if (entidadeId) where.entidadeId = entidadeId;
-    if (usuarioId) where.usuarioId = usuarioId;
-    if (acao) where.acao = acao;
-    if (dataInicio || dataFim) {
-      where.criadoEm = {};
-      if (dataInicio) where.criadoEm.gte = new Date(dataInicio);
-      if (dataFim) where.criadoEm.lte = new Date(dataFim);
+    if (entityType) where.entityType = entityType;
+    if (entityId) where.entityId = entityId;
+    if (userId) where.userId = userId;
+    if (action) where.action = action;
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
     }
 
     const [data, total] = await Promise.all([
@@ -31,7 +31,7 @@ export class AuditLogController {
         where,
         skip,
         take: limit,
-        orderBy: { criadoEm: 'desc' },
+        orderBy: { createdAt: 'desc' },
       }),
       this.prisma.auditLog.count({ where }),
     ]);

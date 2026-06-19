@@ -7,19 +7,19 @@ import { PageHeader } from '@/components/ui/page-header';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 const TIPO_LABEL: Record<string, string> = {
-  CERTIDAO: 'Certidão',
-  AUTORIZACAO: 'Autorização',
-  FOTOGRAFIA: 'Fotografia',
-  ANEXO: 'Anexo',
+  CERTIFICATE: 'Certidão',
+  AUTHORIZATION: 'Autorização',
+  PHOTO: 'Fotografia',
+  ATTACHMENT: 'Anexo',
 };
 
 interface Document {
   id: string;
-  tipo: string;
-  nomeArquivo: string;
-  entidadeTipo: string;
-  entidadeId: string;
-  emitidoEm: string;
+  type: string;
+  fileName: string;
+  entityType: string;
+  entityId: string;
+  issuedAt: string;
 }
 
 interface ApiResponse {
@@ -39,7 +39,7 @@ export default function DocumentosPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
-      if (tipoFilter) params.set('tipo', tipoFilter);
+      if (tipoFilter) params.set('type', tipoFilter);
       const data = await api.get(`/api/v1/documents?${params}`);
       setResult(data);
     } catch {
@@ -129,15 +129,15 @@ export default function DocumentosPage() {
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-700">
                         <FileText size={13} className="text-neutral-400" />
-                        {TIPO_LABEL[doc.tipo] ?? doc.tipo}
+                        {TIPO_LABEL[doc.type] ?? doc.type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-900 text-xs font-mono">{doc.nomeArquivo}</td>
+                    <td className="px-4 py-3 text-neutral-900 text-xs font-mono">{doc.fileName}</td>
                     <td className="px-4 py-3 text-xs text-neutral-500">
-                      {doc.entidadeTipo} · {doc.entidadeId.slice(0, 8)}
+                      {doc.entityType} · {doc.entityId.slice(0, 8)}
                     </td>
                     <td className="px-4 py-3 text-neutral-600 text-xs">
-                      {new Date(doc.emitidoEm).toLocaleDateString('pt-BR')}
+                      {new Date(doc.issuedAt).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -184,7 +184,7 @@ export default function DocumentosPage() {
       <ConfirmDialog
         open={!!inativarTarget}
         title="Remover documento"
-        description={`Tem certeza que deseja remover "${inativarTarget?.nomeArquivo}"?`}
+        description={`Tem certeza que deseja remover "${inativarTarget?.fileName}"?`}
         confirmLabel="Remover"
         onConfirm={handleInativar}
         onCancel={() => setInativarTarget(null)}

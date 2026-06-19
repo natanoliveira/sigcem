@@ -1,11 +1,11 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { JazigoStatus } from '@prisma/client';
+import { GraveStatus } from '@prisma/client';
 
-export class ChangeStatusJazigoDto {
-  @IsEnum(JazigoStatus)
-  status: JazigoStatus;
+export class ChangeStatusGraveDto {
+  @IsEnum(GraveStatus)
+  status: GraveStatus;
 
   @IsString()
   @IsOptional()
-  motivo?: string;
+  reason?: string;
 }

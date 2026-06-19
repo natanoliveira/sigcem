@@ -3,12 +3,12 @@ import { PrismaService } from '../database/prisma.service';
 
 interface AuditParams {
   tenantId: string;
-  usuarioId: string;
-  acao: 'create' | 'update' | 'delete' | 'view_sensitive';
-  entidadeTipo: string;
-  entidadeId: string;
-  dadosAnteriores?: object;
-  dadosNovos?: object;
+  userId: string;
+  action: 'create' | 'update' | 'delete' | 'view_sensitive';
+  entityType: string;
+  entityId: string;
+  previousData?: object;
+  newData?: object;
   ip?: string;
 }
 

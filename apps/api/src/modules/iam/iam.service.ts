@@ -12,22 +12,22 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@shared/database/prisma.service';
 
 export class CreateUserDto {
-  @IsString() @IsNotEmpty() nome: string;
+  @IsString() @IsNotEmpty() name: string;
   @IsEmail() email: string;
-  @IsString() @MinLength(8) senha: string;
-  @IsEnum(UserRole) perfil: UserRole;
+  @IsString() @MinLength(8) password: string;
+  @IsEnum(UserRole) role: UserRole;
 }
 
 export class UpdateUserDto {
-  @IsString() @IsOptional() nome?: string;
-  @IsString() @MinLength(8) @IsOptional() senha?: string;
-  @IsEnum(UserRole) @IsOptional() perfil?: UserRole;
-  @IsOptional() ativo?: boolean;
+  @IsString() @IsOptional() name?: string;
+  @IsString() @MinLength(8) @IsOptional() password?: string;
+  @IsEnum(UserRole) @IsOptional() role?: UserRole;
+  @IsOptional() active?: boolean;
 }
 
 export class AuthDto {
   @IsEmail() email: string;
-  @IsString() @IsNotEmpty() senha: string;
+  @IsString() @IsNotEmpty() password: string;
 }
 
 @Injectable()
@@ -43,19 +43,19 @@ export class IamService {
 
   async auth(dto: AuthDto) {
     const user = await this.prisma.user.findFirst({
-      where: { email: dto.email, ativo: true },
+      where: { email: dto.email, active: true },
     });
 
-    if (!user || !(await bcrypt.compare(dto.senha, user.senha))) {
+    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
       throw new UnauthorizedException('E-mail ou senha incorretos');
     }
 
     const payload = {
       sub:      user.id,
       email:    user.email,
-      name:     user.nome,
+      name:     user.name,
       tenantId: user.tenantId,
-      roles:    [user.perfil],
+      roles:    [user.role],
     };
 
     const accessToken = sign(payload, this.jwtSecret, {
@@ -69,8 +69,8 @@ export class IamService {
   async findAll(tenantId: string) {
     return this.prisma.user.findMany({
       where: { tenantId },
-      select: { id: true, nome: true, email: true, perfil: true, ativo: true, criadoEm: true },
-      orderBy: { nome: 'asc' },
+      select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
+      orderBy: { name: 'asc' },
     });
   }
 
@@ -82,11 +82,11 @@ export class IamService {
       throw new ConflictException(`Já existe um usuário com o e-mail "${dto.email}"`);
     }
 
-    const senhaHash = await bcrypt.hash(dto.senha, 12);
+    const passwordHash = await bcrypt.hash(dto.password, 12);
 
     return this.prisma.user.create({
-      data: { tenantId, nome: dto.nome, email: dto.email, senha: senhaHash, perfil: dto.perfil },
-      select: { id: true, nome: true, email: true, perfil: true, ativo: true, criadoEm: true },
+      data: { tenantId, name: dto.name, email: dto.email, password: passwordHash, role: dto.role },
+      select: { id: true, name: true, email: true, role: true, active: true, createdAt: true },
     });
   }
 
@@ -95,20 +95,20 @@ export class IamService {
     if (!user) throw new NotFoundException(`Usuário ${id} não encontrado`);
 
     const data: any = { ...dto };
-    if (dto.senha) {
-      data.senha = await bcrypt.hash(dto.senha, 12);
+    if (dto.password) {
+      data.password = await bcrypt.hash(dto.password, 12);
     }
 
     return this.prisma.user.update({
       where: { id },
       data,
-      select: { id: true, nome: true, email: true, perfil: true, ativo: true },
+      select: { id: true, name: true, email: true, role: true, active: true },
     });
   }
 
   async remove(id: string, tenantId: string) {
     const user = await this.prisma.user.findFirst({ where: { id, tenantId } });
     if (!user) throw new NotFoundException(`Usuário ${id} não encontrado`);
-    await this.prisma.user.update({ where: { id }, data: { ativo: false } });
+    await this.prisma.user.update({ where: { id }, data: { active: false } });
   }
 }

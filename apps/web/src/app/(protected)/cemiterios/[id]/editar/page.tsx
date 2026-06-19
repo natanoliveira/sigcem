@@ -30,11 +30,11 @@ export default async function EditarCemiterioPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Editar cemitério"
-        description={cemetery.nome}
+        description={cemetery.name}
         breadcrumbs={[
           { label: 'Estrutura' },
           { label: 'Cemitérios', href: '/cemiterios' },
-          { label: cemetery.nome, href: `/cemiterios/${id}` },
+          { label: cemetery.name, href: `/cemiterios/${id}` },
           { label: 'Editar' },
         ]}
       />
@@ -42,11 +42,11 @@ export default async function EditarCemiterioPage({ params }: Props) {
         mode="edit"
         initialData={{
           id: cemetery.id,
-          nome: cemetery.nome,
-          endereco: cemetery.endereco,
-          bairro: cemetery.bairro ?? '',
+          name: cemetery.name,
+          address: cemetery.address,
+          neighborhood: cemetery.neighborhood ?? '',
           areaM2: cemetery.areaM2 != null ? String(cemetery.areaM2) : '',
-          capacidade: cemetery.capacidade != null ? String(cemetery.capacidade) : '',
+          capacity: cemetery.capacity != null ? String(cemetery.capacity) : '',
         }}
       />
     </div>

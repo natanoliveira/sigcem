@@ -27,9 +27,9 @@ export class DocumentService {
   // T-034 — upload genérico
   async upload(
     file: Express.Multer.File,
-    entidadeTipo: string,
-    entidadeId: string,
-    tipo: DocumentType,
+    entityType: string,
+    entityId: string,
+    type: DocumentType,
     tenantId: string,
     userId: string,
     userName: string,
@@ -45,25 +45,25 @@ export class DocumentService {
     }
 
     const ext = extname(file.originalname) || '.bin';
-    const objectKey = `${entidadeTipo.toLowerCase()}/${entidadeId}/${randomUUID()}${ext}`;
+    const objectKey = `${entityType.toLowerCase()}/${entityId}/${randomUUID()}${ext}`;
 
     await this.storage.upload(tenantId, objectKey, file.buffer, file.mimetype);
 
     const document = await this.prisma.forTenant(tenantId).document.create({
       data: {
-        tipo,
-        entidadeTipo,
-        entidadeId,
-        nomeArquivo: file.originalname,
-        urlMinio: objectKey,
-        emitidoPor: userId,
+        type,
+        entityType,
+        entityId,
+        fileName: file.originalname,
+        storageKey: objectKey,
+        issuedBy: userId,
       } as any,
     });
 
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'create',
-      entidadeTipo: 'Document', entidadeId: document.id,
-      dadosNovos: { tipo, entidadeTipo, entidadeId, nomeArquivo: file.originalname },
+      tenantId, userId, action: 'create',
+      entityType: 'Document', entityId: document.id,
+      newData: { type, entityType, entityId, fileName: file.originalname },
       ip,
     });
 
@@ -73,16 +73,16 @@ export class DocumentService {
 
   async findAll(query: QueryDocumentDto, tenantId: string) {
     const db = this.prisma.forTenant(tenantId);
-    const { entidadeTipo, entidadeId, tipo, page = 1, limit = 20 } = query;
+    const { entityType, entityId, type, page = 1, limit = 20 } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = { ativo: true };
-    if (entidadeTipo) where.entidadeTipo = entidadeTipo;
-    if (entidadeId) where.entidadeId = entidadeId;
-    if (tipo) where.tipo = tipo;
+    const where: any = { active: true };
+    if (entityType) where.entityType = entityType;
+    if (entityId) where.entityId = entityId;
+    if (type) where.type = type;
 
     const [data, total] = await Promise.all([
-      db.document.findMany({ where, skip, take: limit, orderBy: { emitidoEm: 'desc' } }),
+      db.document.findMany({ where, skip, take: limit, orderBy: { issuedAt: 'desc' } }),
       db.document.count({ where }),
     ]);
 
@@ -92,21 +92,21 @@ export class DocumentService {
   // T-035 — download com URL assinada
   async download(id: string, tenantId: string, userId: string, ip?: string) {
     const document = await this.prisma.forTenant(tenantId).document.findFirst({
-      where: { id, ativo: true },
+      where: { id, active: true },
     });
     if (!document) throw new NotFoundException(`Documento ${id} não encontrado`);
 
-    const url = await this.storage.presignedUrl(tenantId, document.urlMinio);
+    const url = await this.storage.presignedUrl(tenantId, document.storageKey);
     const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
 
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'view_sensitive',
-      entidadeTipo: 'Document', entidadeId: id,
-      dadosNovos: { acao: 'download', nomeArquivo: document.nomeArquivo },
+      tenantId, userId, action: 'view_sensitive',
+      entityType: 'Document', entityId: id,
+      newData: { action: 'download', fileName: document.fileName },
       ip,
     });
 
-    return { url, expiresAt, nomeArquivo: document.nomeArquivo };
+    return { url, expiresAt, fileName: document.fileName };
   }
 
   // T-036 — inativação (arquivo permanece no MinIO)
@@ -115,13 +115,13 @@ export class DocumentService {
     const document = await db.document.findFirst({ where: { id } });
     if (!document) throw new NotFoundException(`Documento ${id} não encontrado`);
 
-    await db.document.update({ where: { id }, data: { ativo: false } });
+    await db.document.update({ where: { id }, data: { active: false } });
 
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'update',
-      entidadeTipo: 'Document', entidadeId: id,
-      dadosAnteriores: { ativo: true },
-      dadosNovos: { ativo: false },
+      tenantId, userId, action: 'update',
+      entityType: 'Document', entityId: id,
+      previousData: { active: true },
+      newData: { active: false },
       ip,
     });
   }
@@ -139,10 +139,10 @@ export class DocumentService {
     const burial = await db.burial.findFirst({
       where: { id: burialId },
       include: {
-        falecido: true,
-        jazigo: {
+        deceased: true,
+        grave: {
           include: {
-            quadra: { include: { cemiterio: true } },
+            block: { include: { cemetery: true } },
           },
         },
       },
@@ -154,21 +154,21 @@ export class DocumentService {
     const numeroRegistro = `${new Date().getFullYear()}-${burial.id.slice(0, 8).toUpperCase()}`;
 
     const pdfBuffer = await this.certificate.generate({
-      municipio: tenant?.nome ?? 'Município',
-      falecidoNome: burial.falecido.nomeCompleto,
-      falecidoNascimento: burial.falecido.dataNascimento,
-      falecidoFalecimento: burial.falecido.dataFalecimento,
-      naturalidade: burial.falecido.naturalidade,
-      nomePai: burial.falecido.nomePai,
-      nomeMae: burial.falecido.nomeMae,
-      tipoOperacao: burial.tipo as any,
-      dataEvento: burial.dataEvento,
-      jazigoCodigo: burial.jazigo.codigo,
-      quadraCodigo: burial.jazigo.quadra.codigo,
-      cemiterioNome: burial.jazigo.quadra.cemiterio.nome,
-      autorizadoPor: burial.autorizadoPor,
-      funeraria: burial.funeraria,
-      emitidoPorNome: userName,
+      municipio: tenant?.name ?? 'Município',
+      deceasedName: burial.deceased.fullName,
+      deceasedBirthDate: burial.deceased.birthDate,
+      deceasedDeathDate: burial.deceased.deathDate,
+      birthPlace: burial.deceased.birthPlace,
+      fatherName: burial.deceased.fatherName,
+      motherName: burial.deceased.motherName,
+      operationType: burial.type as any,
+      eventDate: burial.eventDate,
+      graveCode: burial.grave.code,
+      blockCode: burial.grave.block.code,
+      cemeteryName: burial.grave.block.cemetery.name,
+      authorizedBy: burial.authorizedBy,
+      funeralHome: burial.funeralHome,
+      issuedByName: userName,
       numeroRegistro,
     });
 
@@ -177,19 +177,19 @@ export class DocumentService {
 
     const document = await this.prisma.forTenant(tenantId).document.create({
       data: {
-        tipo: DocumentType.CERTIDAO,
-        entidadeTipo: 'Burial',
-        entidadeId: burialId,
-        nomeArquivo: `certidao-${numeroRegistro}.pdf`,
-        urlMinio: objectKey,
-        emitidoPor: userId,
+        type: DocumentType.CERTIFICATE,
+        entityType: 'Burial',
+        entityId: burialId,
+        fileName: `certidao-${numeroRegistro}.pdf`,
+        storageKey: objectKey,
+        issuedBy: userId,
       } as any,
     });
 
     await this.audit.log({
-      tenantId, usuarioId: userId, acao: 'create',
-      entidadeTipo: 'Document', entidadeId: document.id,
-      dadosNovos: { tipo: 'CERTIDAO', burialId, numeroRegistro },
+      tenantId, userId, action: 'create',
+      entityType: 'Document', entityId: document.id,
+      newData: { type: 'CERTIFICATE', burialId, numeroRegistro },
       ip,
     });
 

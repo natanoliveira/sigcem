@@ -3,20 +3,20 @@ import PDFDocument from 'pdfkit';
 
 export interface CertificateData {
   municipio: string;
-  falecidoNome: string;
-  falecidoNascimento: Date;
-  falecidoFalecimento: Date;
-  naturalidade?: string | null;
-  nomePai?: string | null;
-  nomeMae?: string | null;
-  tipoOperacao: 'INUMACAO' | 'EXUMACAO' | 'TRANSLADO';
-  dataEvento: Date;
-  jazigoCodigo: string;
-  quadraCodigo: string;
-  cemiterioNome: string;
-  autorizadoPor: string;
-  funeraria?: string | null;
-  emitidoPorNome: string;
+  deceasedName: string;
+  deceasedBirthDate: Date;
+  deceasedDeathDate: Date;
+  birthPlace?: string | null;
+  fatherName?: string | null;
+  motherName?: string | null;
+  operationType: 'INHUMATION' | 'EXHUMATION' | 'TRANSFER';
+  eventDate: Date;
+  graveCode: string;
+  blockCode: string;
+  cemeteryName: string;
+  authorizedBy: string;
+  funeralHome?: string | null;
+  issuedByName: string;
   numeroRegistro: string;
 }
 
@@ -41,10 +41,10 @@ export class CertificateService {
           day: '2-digit', month: 'long', year: 'numeric',
         });
 
-      const tipoLabel: Record<string, string> = {
-        INUMACAO: 'Inumação',
-        EXUMACAO: 'Exumação',
-        TRANSLADO: 'Translado',
+      const typeLabel: Record<string, string> = {
+        INHUMATION: 'Inumação',
+        EXHUMATION: 'Exumação',
+        TRANSFER: 'Translado',
       };
 
       // ── Cabeçalho ──────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ export class CertificateService {
         .fillColor(TITLE_COLOR)
         .fontSize(16)
         .font('Helvetica-Bold')
-        .text(`CERTIDÃO DE ${tipoLabel[data.tipoOperacao].toUpperCase()}`, { align: 'center' });
+        .text(`CERTIDÃO DE ${typeLabel[data.operationType].toUpperCase()}`, { align: 'center' });
 
       doc
         .fontSize(9)
@@ -88,7 +88,7 @@ export class CertificateService {
         .font('Helvetica')
         .text(
           `Certificamos que, conforme registros desta municipalidade, foi realizada a ` +
-          `${tipoLabel[data.tipoOperacao].toLowerCase()} de:`,
+          `${typeLabel[data.operationType].toLowerCase()} de:`,
           { align: 'justify' },
         );
 
@@ -96,21 +96,21 @@ export class CertificateService {
 
       // Dados do falecido
       section(doc, 'DADOS DO FALECIDO', TITLE_COLOR, LINE_COLOR);
-      field(doc, 'Nome completo', data.falecidoNome, TEXT_COLOR, MUTED_COLOR);
-      field(doc, 'Data de nascimento', formatDate(data.falecidoNascimento), TEXT_COLOR, MUTED_COLOR);
-      field(doc, 'Data de falecimento', formatDate(data.falecidoFalecimento), TEXT_COLOR, MUTED_COLOR);
-      if (data.naturalidade) field(doc, 'Naturalidade', data.naturalidade, TEXT_COLOR, MUTED_COLOR);
-      if (data.nomePai) field(doc, 'Filiação (pai)', data.nomePai, TEXT_COLOR, MUTED_COLOR);
-      if (data.nomeMae) field(doc, 'Filiação (mãe)', data.nomeMae, TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Nome completo', data.deceasedName, TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Data de nascimento', formatDate(data.deceasedBirthDate), TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Data de falecimento', formatDate(data.deceasedDeathDate), TEXT_COLOR, MUTED_COLOR);
+      if (data.birthPlace) field(doc, 'Naturalidade', data.birthPlace, TEXT_COLOR, MUTED_COLOR);
+      if (data.fatherName) field(doc, 'Filiação (pai)', data.fatherName, TEXT_COLOR, MUTED_COLOR);
+      if (data.motherName) field(doc, 'Filiação (mãe)', data.motherName, TEXT_COLOR, MUTED_COLOR);
 
       doc.moveDown(0.5);
       section(doc, 'DADOS DA OPERAÇÃO', TITLE_COLOR, LINE_COLOR);
-      field(doc, 'Tipo', tipoLabel[data.tipoOperacao], TEXT_COLOR, MUTED_COLOR);
-      field(doc, 'Data do evento', formatDate(data.dataEvento), TEXT_COLOR, MUTED_COLOR);
-      field(doc, 'Cemitério', data.cemiterioNome, TEXT_COLOR, MUTED_COLOR);
-      field(doc, 'Quadra / Jazigo', `Quadra ${data.quadraCodigo} — Jazigo ${data.jazigoCodigo}`, TEXT_COLOR, MUTED_COLOR);
-      field(doc, 'Autorizado por', data.autorizadoPor, TEXT_COLOR, MUTED_COLOR);
-      if (data.funeraria) field(doc, 'Funerária', data.funeraria, TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Tipo', typeLabel[data.operationType], TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Data do evento', formatDate(data.eventDate), TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Cemitério', data.cemeteryName, TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Quadra / Jazigo', `Quadra ${data.blockCode} — Jazigo ${data.graveCode}`, TEXT_COLOR, MUTED_COLOR);
+      field(doc, 'Autorizado por', data.authorizedBy, TEXT_COLOR, MUTED_COLOR);
+      if (data.funeralHome) field(doc, 'Funerária', data.funeralHome, TEXT_COLOR, MUTED_COLOR);
 
       doc.moveDown(1.5);
 
@@ -122,7 +122,7 @@ export class CertificateService {
         .fontSize(9)
         .fillColor(MUTED_COLOR)
         .text(
-          `Documento emitido em ${formatDate(new Date())} por ${data.emitidoPorNome} ` +
+          `Documento emitido em ${formatDate(new Date())} por ${data.issuedByName} ` +
           `através do Sistema de Gestão de Cemitérios — SIGCEM.`,
           { align: 'center' },
         );
@@ -140,7 +140,7 @@ export class CertificateService {
         .fontSize(9)
         .fillColor(TEXT_COLOR)
         .font('Helvetica-Bold')
-        .text(data.emitidoPorNome, { align: 'center' });
+        .text(data.issuedByName, { align: 'center' });
       doc
         .font('Helvetica')
         .fillColor(MUTED_COLOR)

@@ -10,12 +10,12 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Quadra {
   id: string;
-  codigo: string;
-  nome: string | null;
-  capacidade: number | null;
+  code: string;
+  name: string | null;
+  capacity: number | null;
   status: string;
-  cemiterio: { id: string; nome: string };
-  _count: { jazigos: number };
+  cemetery: { id: string; name: string };
+  _count: { graves: number };
 }
 
 interface ApiResponse {
@@ -36,7 +36,7 @@ export default function QuadrasPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (search) params.set('search', search);
-      const data = await api.get(`/api/v1/quadras?${params}`);
+      const data = await api.get(`/api/v1/blocks?${params}`);
       setResult(data);
     } catch {
       setResult(null);
@@ -54,7 +54,7 @@ export default function QuadrasPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await api.delete(`/api/v1/quadras/${deleteTarget.id}`);
+      await api.delete(`/api/v1/blocks/${deleteTarget.id}`);
       setDeleteTarget(null);
       fetchData();
     } catch {
@@ -127,16 +127,16 @@ export default function QuadrasPage() {
               ) : (
                 result?.data.map((q) => (
                   <tr key={q.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 font-mono font-semibold text-neutral-900">{q.codigo}</td>
-                    <td className="px-4 py-3 text-neutral-600">{q.nome ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono font-semibold text-neutral-900">{q.code}</td>
+                    <td className="px-4 py-3 text-neutral-600">{q.name ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <Link href={`/cemiterios/${q.cemiterio.id}`} className="text-primary-600 hover:underline">
-                        {q.cemiterio.nome}
+                      <Link href={`/cemiterios/${q.cemetery.id}`} className="text-primary-600 hover:underline">
+                        {q.cemetery.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-neutral-600">{q._count.jazigos}</td>
+                    <td className="px-4 py-3 text-neutral-600">{q._count.graves}</td>
                     <td className="px-4 py-3 text-neutral-600">
-                      {q.capacidade != null ? q.capacidade.toLocaleString('pt-BR') : '—'}
+                      {q.capacity != null ? q.capacity.toLocaleString('pt-BR') : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={q.status} />
@@ -201,7 +201,7 @@ export default function QuadrasPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Excluir quadra"
-        description={`Tem certeza que deseja excluir a quadra "${deleteTarget?.codigo}"? Esta ação não pode ser desfeita.`}
+        description={`Tem certeza que deseja excluir a quadra "${deleteTarget?.code}"? Esta ação não pode ser desfeita.`}
         confirmLabel="Excluir"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

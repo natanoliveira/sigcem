@@ -5,29 +5,29 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
 const TIPO_OPTIONS = [
-  { value: 'SIMPLES', label: 'Simples' },
-  { value: 'DUPLO', label: 'Duplo' },
-  { value: 'GAVETA', label: 'Gaveta' },
-  { value: 'OSSUARIO', label: 'Ossário' },
-  { value: 'PERPETUO', label: 'Perpétuo' },
+  { value: 'SINGLE', label: 'Simples' },
+  { value: 'DOUBLE', label: 'Duplo' },
+  { value: 'DRAWER', label: 'Gaveta' },
+  { value: 'OSSUARY', label: 'Ossário' },
+  { value: 'PERPETUAL', label: 'Perpétuo' },
 ];
 
-interface Quadra {
+interface Block {
   id: string;
-  codigo: string;
-  cemiterio: { nome: string };
+  code: string;
+  cemetery: { name: string };
 }
 
-interface JazigoFormData {
-  quadraId: string;
-  codigo: string;
-  tipo: string;
-  localizacaoRef: string;
-  observacoes: string;
+interface GraveFormData {
+  blockId: string;
+  code: string;
+  type: string;
+  locationRef: string;
+  notes: string;
 }
 
 interface JazigoFormProps {
-  initialData?: Partial<JazigoFormData> & { id?: string };
+  initialData?: Partial<GraveFormData> & { id?: string };
   mode: 'create' | 'edit';
   fixedQuadraId?: string;
 }
@@ -36,18 +36,18 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [quadras, setQuadras] = useState<Quadra[]>([]);
-  const [form, setForm] = useState<JazigoFormData>({
-    quadraId: fixedQuadraId ?? initialData?.quadraId ?? '',
-    codigo: initialData?.codigo ?? '',
-    tipo: initialData?.tipo ?? '',
-    localizacaoRef: initialData?.localizacaoRef ?? '',
-    observacoes: initialData?.observacoes ?? '',
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [form, setForm] = useState<GraveFormData>({
+    blockId: fixedQuadraId ?? initialData?.blockId ?? '',
+    code: initialData?.code ?? '',
+    type: initialData?.type ?? '',
+    locationRef: initialData?.locationRef ?? '',
+    notes: initialData?.notes ?? '',
   });
 
   useEffect(() => {
     if (!fixedQuadraId && mode === 'create') {
-      api.get('/api/v1/quadras?limit=200').then((r) => setQuadras(r.data ?? []));
+      api.get('/api/v1/blocks?limit=200').then((r) => setBlocks(r.data ?? []));
     }
   }, [fixedQuadraId, mode]);
 
@@ -64,19 +64,19 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
     setError('');
 
     const payload = {
-      quadraId: form.quadraId,
-      codigo: form.codigo.trim().toUpperCase(),
-      tipo: form.tipo,
-      localizacaoRef: form.localizacaoRef.trim() || undefined,
-      observacoes: form.observacoes.trim() || undefined,
+      blockId: form.blockId,
+      code: form.code.trim().toUpperCase(),
+      type: form.type,
+      locationRef: form.locationRef.trim() || undefined,
+      notes: form.notes.trim() || undefined,
     };
 
     try {
       if (mode === 'create') {
-        await api.post('/api/v1/jazigos', payload);
+        await api.post('/api/v1/graves', payload);
       } else {
-        const { quadraId: _, ...updatePayload } = payload;
-        await api.patch(`/api/v1/jazigos/${initialData!.id}`, updatePayload);
+        const { blockId: _, ...updatePayload } = payload;
+        await api.patch(`/api/v1/graves/${initialData!.id}`, updatePayload);
       }
       router.push(fixedQuadraId ? `/quadras/${fixedQuadraId}` : '/jazigos');
       router.refresh();
@@ -102,16 +102,16 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
               Quadra <span className="text-red-500">*</span>
             </label>
             <select
-              name="quadraId"
-              value={form.quadraId}
+              name="blockId"
+              value={form.blockId}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
               <option value="">Selecione uma quadra</option>
-              {quadras.map((q) => (
-                <option key={q.id} value={q.id}>
-                  {q.cemiterio.nome} — Quadra {q.codigo}
+              {blocks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.cemetery.name} — Quadra {b.code}
                 </option>
               ))}
             </select>
@@ -124,8 +124,8 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
           </label>
           <input
             type="text"
-            name="codigo"
-            value={form.codigo}
+            name="code"
+            value={form.code}
             onChange={handleChange}
             required
             maxLength={20}
@@ -139,8 +139,8 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
             Tipo <span className="text-red-500">*</span>
           </label>
           <select
-            name="tipo"
-            value={form.tipo}
+            name="type"
+            value={form.type}
             onChange={handleChange}
             required
             className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -158,8 +158,8 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
           </label>
           <input
             type="text"
-            name="localizacaoRef"
-            value={form.localizacaoRef}
+            name="locationRef"
+            value={form.locationRef}
             onChange={handleChange}
             maxLength={200}
             placeholder="Ex: Fileira 3, Coluna 5"
@@ -170,8 +170,8 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
         <div className="lg:col-span-2">
           <label className="block text-sm font-medium text-neutral-700 mb-1">Observações</label>
           <textarea
-            name="observacoes"
-            value={form.observacoes}
+            name="notes"
+            value={form.notes}
             onChange={handleChange}
             rows={3}
             placeholder="Informações adicionais..."

@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@shared/database/prisma.service';
 import { AuditService } from '@shared/audit/audit.service';
-import { CreateQuadraDto } from './dto/create-quadra.dto';
-import { UpdateQuadraDto } from './dto/update-quadra.dto';
-import { QueryQuadraDto } from './dto/query-quadra.dto';
+import { CreateBlockDto } from './dto/create-quadra.dto';
+import { UpdateBlockDto } from './dto/update-quadra.dto';
+import { QueryBlockDto } from './dto/query-quadra.dto';
 
 @Injectable()
 export class QuadraService {
@@ -16,65 +16,65 @@ export class QuadraService {
     private audit: AuditService,
   ) {}
 
-  async create(dto: CreateQuadraDto, tenantId: string, userId: string, ip?: string) {
+  async create(dto: CreateBlockDto, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const cemetery = await db.cemetery.findFirst({ where: { id: dto.cemiterioId } });
+    const cemetery = await db.cemetery.findFirst({ where: { id: dto.cemeteryId } });
     if (!cemetery) {
-      throw new NotFoundException(`Cemitério ${dto.cemiterioId} não encontrado`);
+      throw new NotFoundException(`Cemitério ${dto.cemeteryId} não encontrado`);
     }
 
-    const existing = await db.quadra.findFirst({
-      where: { cemiterioId: dto.cemiterioId, codigo: dto.codigo },
+    const existing = await db.block.findFirst({
+      where: { cemeteryId: dto.cemeteryId, code: dto.code },
     });
     if (existing) {
       throw new ConflictException(
-        `Já existe uma quadra com código "${dto.codigo}" neste cemitério`,
+        `Já existe uma quadra com código "${dto.code}" neste cemitério`,
       );
     }
 
-    const quadra = await db.quadra.create({ data: dto as any });
+    const block = await db.block.create({ data: dto as any });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'create',
-      entidadeTipo: 'Quadra',
-      entidadeId: quadra.id,
-      dadosNovos: quadra,
+      userId,
+      action: 'create',
+      entityType: 'Quadra',
+      entityId: block.id,
+      newData: block,
       ip,
     });
 
-    return quadra;
+    return block;
   }
 
-  async findAll(query: QueryQuadraDto, tenantId: string) {
+  async findAll(query: QueryBlockDto, tenantId: string) {
     const db = this.prisma.forTenant(tenantId);
-    const { cemiterioId, status, search, page = 1, limit = 50 } = query;
+    const { cemeteryId, status, search, page = 1, limit = 50 } = query;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (cemiterioId) where.cemiterioId = cemiterioId;
+    if (cemeteryId) where.cemeteryId = cemeteryId;
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { codigo: { contains: search, mode: 'insensitive' } },
-        { nome: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     const [data, total] = await Promise.all([
-      db.quadra.findMany({
+      db.block.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { codigo: 'asc' },
+        orderBy: { code: 'asc' },
         include: {
-          cemiterio: { select: { id: true, nome: true } },
-          _count: { select: { jazigos: true } },
+          cemetery: { select: { id: true, name: true } },
+          _count: { select: { graves: true } },
         },
       }),
-      db.quadra.count({ where }),
+      db.block.count({ where }),
     ]);
 
     return {
@@ -84,54 +84,54 @@ export class QuadraService {
   }
 
   async findOne(id: string, tenantId: string) {
-    const quadra = await this.prisma.forTenant(tenantId).quadra.findFirst({
+    const block = await this.prisma.forTenant(tenantId).block.findFirst({
       where: { id },
       include: {
-        cemiterio: { select: { id: true, nome: true } },
-        jazigos: {
-          select: { id: true, codigo: true, tipo: true, status: true },
-          orderBy: { codigo: 'asc' },
+        cemetery: { select: { id: true, name: true } },
+        graves: {
+          select: { id: true, code: true, type: true, status: true },
+          orderBy: { code: 'asc' },
         },
       },
     });
 
-    if (!quadra) throw new NotFoundException(`Quadra ${id} não encontrada`);
-    return quadra;
+    if (!block) throw new NotFoundException(`Quadra ${id} não encontrada`);
+    return block;
   }
 
   async update(
     id: string,
-    dto: UpdateQuadraDto,
+    dto: UpdateBlockDto,
     tenantId: string,
     userId: string,
     ip?: string,
   ) {
     const db = this.prisma.forTenant(tenantId);
 
-    const current = await db.quadra.findFirst({ where: { id } });
+    const current = await db.block.findFirst({ where: { id } });
     if (!current) throw new NotFoundException(`Quadra ${id} não encontrada`);
 
-    if (dto.codigo && dto.codigo !== current.codigo) {
-      const conflict = await db.quadra.findFirst({
-        where: { cemiterioId: current.cemiterioId, codigo: dto.codigo },
+    if (dto.code && dto.code !== current.code) {
+      const conflict = await db.block.findFirst({
+        where: { cemeteryId: current.cemeteryId, code: dto.code },
       });
       if (conflict) {
         throw new ConflictException(
-          `Já existe uma quadra com código "${dto.codigo}" neste cemitério`,
+          `Já existe uma quadra com código "${dto.code}" neste cemitério`,
         );
       }
     }
 
-    const updated = await db.quadra.update({ where: { id }, data: dto });
+    const updated = await db.block.update({ where: { id }, data: dto });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'update',
-      entidadeTipo: 'Quadra',
-      entidadeId: id,
-      dadosAnteriores: current,
-      dadosNovos: updated,
+      userId,
+      action: 'update',
+      entityType: 'Quadra',
+      entityId: id,
+      previousData: current,
+      newData: updated,
       ip,
     });
 
@@ -141,18 +141,18 @@ export class QuadraService {
   async remove(id: string, tenantId: string, userId: string, ip?: string) {
     const db = this.prisma.forTenant(tenantId);
 
-    const current = await db.quadra.findFirst({ where: { id } });
+    const current = await db.block.findFirst({ where: { id } });
     if (!current) throw new NotFoundException(`Quadra ${id} não encontrada`);
 
-    await db.quadra.delete({ where: { id } });
+    await db.block.delete({ where: { id } });
 
     await this.audit.log({
       tenantId,
-      usuarioId: userId,
-      acao: 'delete',
-      entidadeTipo: 'Quadra',
-      entidadeId: id,
-      dadosAnteriores: current,
+      userId,
+      action: 'delete',
+      entityType: 'Quadra',
+      entityId: id,
+      previousData: current,
       ip,
     });
   }

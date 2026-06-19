@@ -8,11 +8,11 @@ export class QueryDeceasedDto {
 
   @IsDateString()
   @IsOptional()
-  dataFalecimentoInicio?: string;
+  deathDateStart?: string;
 
   @IsDateString()
   @IsOptional()
-  dataFalecimentoFim?: string;
+  deathDateEnd?: string;
 
   @IsInt()
   @IsOptional()

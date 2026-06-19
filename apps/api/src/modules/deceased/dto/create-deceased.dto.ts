@@ -11,13 +11,13 @@ export class CreateDeceasedDto {
   @IsString()
   @IsNotEmpty({ message: 'Nome completo é obrigatório' })
   @MaxLength(200)
-  nomeCompleto: string;
+  fullName: string;
 
   @IsDateString()
-  dataNascimento: string;
+  birthDate: string;
 
   @IsDateString()
-  dataFalecimento: string;
+  deathDate: string;
 
   // Campo sensível LGPD — será criptografado antes de persistir
   @IsString()
@@ -29,29 +29,29 @@ export class CreateDeceasedDto {
   @IsString()
   @IsOptional()
   @MaxLength(500)
-  causaMortis?: string;
+  causeOfDeath?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(100)
-  naturalidade?: string;
+  birthPlace?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(100)
-  nacionalidade?: string;
+  nationality?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(200)
-  nomePai?: string;
+  fatherName?: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(200)
-  nomeMae?: string;
+  motherName?: string;
 
   @IsString()
   @IsOptional()
-  observacoes?: string;
+  notes?: string;
 }

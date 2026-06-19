@@ -1,24 +1,24 @@
 import { IsString, IsNotEmpty, IsOptional, IsInt, Min, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateQuadraDto {
+export class CreateBlockDto {
   @IsString()
   @IsNotEmpty({ message: 'Cemitério é obrigatório' })
-  cemiterioId: string;
+  cemeteryId: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Código é obrigatório' })
   @MaxLength(20)
-  codigo: string;
+  code: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(100)
-  nome?: string;
+  name?: string;
 
   @IsInt()
   @IsOptional()
   @Min(0)
   @Type(() => Number)
-  capacidade?: number;
+  capacity?: number;
 }

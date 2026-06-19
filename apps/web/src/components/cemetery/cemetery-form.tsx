@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
 interface CemeteryFormData {
-  nome: string;
-  endereco: string;
-  bairro: string;
+  name: string;
+  address: string;
+  neighborhood: string;
   areaM2: string;
-  capacidade: string;
+  capacity: string;
 }
 
 interface CemeteryFormProps {
@@ -22,11 +22,11 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState<CemeteryFormData>({
-    nome: initialData?.nome ?? '',
-    endereco: initialData?.endereco ?? '',
-    bairro: initialData?.bairro ?? '',
+    name: initialData?.name ?? '',
+    address: initialData?.address ?? '',
+    neighborhood: initialData?.neighborhood ?? '',
     areaM2: initialData?.areaM2 ?? '',
-    capacidade: initialData?.capacidade ?? '',
+    capacity: initialData?.capacity ?? '',
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -40,11 +40,11 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
     setError('');
 
     const payload = {
-      nome: form.nome.trim(),
-      endereco: form.endereco.trim(),
-      bairro: form.bairro.trim() || undefined,
+      name: form.name.trim(),
+      address: form.address.trim(),
+      neighborhood: form.neighborhood.trim() || undefined,
       areaM2: form.areaM2 ? parseFloat(form.areaM2) : undefined,
-      capacidade: form.capacidade ? parseInt(form.capacidade, 10) : undefined,
+      capacity: form.capacity ? parseInt(form.capacity, 10) : undefined,
     };
 
     try {
@@ -77,8 +77,8 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
           </label>
           <input
             type="text"
-            name="nome"
-            value={form.nome}
+            name="name"
+            value={form.name}
             onChange={handleChange}
             required
             maxLength={200}
@@ -93,8 +93,8 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
           </label>
           <input
             type="text"
-            name="endereco"
-            value={form.endereco}
+            name="address"
+            value={form.address}
             onChange={handleChange}
             required
             maxLength={300}
@@ -107,8 +107,8 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
           <label className="block text-sm font-medium text-neutral-700 mb-1">Bairro</label>
           <input
             type="text"
-            name="bairro"
-            value={form.bairro}
+            name="neighborhood"
+            value={form.neighborhood}
             onChange={handleChange}
             maxLength={100}
             placeholder="Nome do bairro"
@@ -138,8 +138,8 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
           </label>
           <input
             type="number"
-            name="capacidade"
-            value={form.capacidade}
+            name="capacity"
+            value={form.capacity}
             onChange={handleChange}
             min={0}
             step={1}

@@ -13,9 +13,9 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { QuadraService } from './quadra.service';
-import { CreateQuadraDto } from './dto/create-quadra.dto';
-import { UpdateQuadraDto } from './dto/update-quadra.dto';
-import { QueryQuadraDto } from './dto/query-quadra.dto';
+import { CreateBlockDto } from './dto/create-quadra.dto';
+import { UpdateBlockDto } from './dto/update-quadra.dto';
+import { QueryBlockDto } from './dto/query-quadra.dto';
 import { Roles } from '@shared/decorators/roles.decorator';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
@@ -25,9 +25,9 @@ export class QuadraController {
   constructor(private readonly service: QuadraService) {}
 
   @Post()
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   create(
-    @Body() dto: CreateQuadraDto,
+    @Body() dto: CreateBlockDto,
     @CurrentUser() user: UserPayload,
     @Req() req: Request,
   ) {
@@ -35,22 +35,22 @@ export class QuadraController {
   }
 
   @Get()
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
-  findAll(@Query() query: QueryQuadraDto, @CurrentUser() user: UserPayload) {
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  findAll(@Query() query: QueryBlockDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
-  @Roles('ADMIN', 'GESTOR', 'OPERADOR', 'AGENTE_DOCUMENTAL')
+  @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
   findOne(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findOne(id, user.tenantId);
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'GESTOR')
+  @Roles('ADMIN', 'MANAGER')
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateQuadraDto,
+    @Body() dto: UpdateBlockDto,
     @CurrentUser() user: UserPayload,
     @Req() req: Request,
   ) {

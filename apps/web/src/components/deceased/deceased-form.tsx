@@ -6,16 +6,16 @@ import { useSession } from 'next-auth/react';
 import { api } from '@/lib/api';
 
 interface DeceasedFormData {
-  nomeCompleto: string;
-  dataNascimento: string;
-  dataFalecimento: string;
+  fullName: string;
+  birthDate: string;
+  deathDate: string;
   cpf: string;
-  causaMortis: string;
-  naturalidade: string;
-  nacionalidade: string;
-  nomePai: string;
-  nomeMae: string;
-  observacoes: string;
+  causeOfDeath: string;
+  birthPlace: string;
+  nationality: string;
+  fatherName: string;
+  motherName: string;
+  notes: string;
 }
 
 interface DeceasedFormProps {
@@ -23,7 +23,7 @@ interface DeceasedFormProps {
   mode: 'create' | 'edit';
 }
 
-const SENSITIVE_ROLES = ['ADMIN', 'GESTOR'];
+const SENSITIVE_ROLES = ['ADMIN', 'MANAGER'];
 
 export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
   const router = useRouter();
@@ -34,16 +34,16 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState<DeceasedFormData>({
-    nomeCompleto: initialData?.nomeCompleto ?? '',
-    dataNascimento: initialData?.dataNascimento ?? '',
-    dataFalecimento: initialData?.dataFalecimento ?? '',
+    fullName: initialData?.fullName ?? '',
+    birthDate: initialData?.birthDate ?? '',
+    deathDate: initialData?.deathDate ?? '',
     cpf: initialData?.cpf ?? '',
-    causaMortis: initialData?.causaMortis ?? '',
-    naturalidade: initialData?.naturalidade ?? '',
-    nacionalidade: initialData?.nacionalidade ?? 'Brasileira',
-    nomePai: initialData?.nomePai ?? '',
-    nomeMae: initialData?.nomeMae ?? '',
-    observacoes: initialData?.observacoes ?? '',
+    causeOfDeath: initialData?.causeOfDeath ?? '',
+    birthPlace: initialData?.birthPlace ?? '',
+    nationality: initialData?.nationality ?? 'Brasileira',
+    fatherName: initialData?.fatherName ?? '',
+    motherName: initialData?.motherName ?? '',
+    notes: initialData?.notes ?? '',
   });
 
   function handleChange(
@@ -59,19 +59,19 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
     setError('');
 
     const payload: any = {
-      nomeCompleto: form.nomeCompleto.trim(),
-      dataNascimento: form.dataNascimento,
-      dataFalecimento: form.dataFalecimento,
-      naturalidade: form.naturalidade.trim() || undefined,
-      nacionalidade: form.nacionalidade.trim() || undefined,
-      nomePai: form.nomePai.trim() || undefined,
-      nomeMae: form.nomeMae.trim() || undefined,
-      observacoes: form.observacoes.trim() || undefined,
+      fullName: form.fullName.trim(),
+      birthDate: form.birthDate,
+      deathDate: form.deathDate,
+      birthPlace: form.birthPlace.trim() || undefined,
+      nationality: form.nationality.trim() || undefined,
+      fatherName: form.fatherName.trim() || undefined,
+      motherName: form.motherName.trim() || undefined,
+      notes: form.notes.trim() || undefined,
     };
 
     if (canSeeSensitive) {
       if (form.cpf.trim()) payload.cpf = form.cpf.trim();
-      if (form.causaMortis.trim()) payload.causaMortis = form.causaMortis.trim();
+      if (form.causeOfDeath.trim()) payload.causeOfDeath = form.causeOfDeath.trim();
     }
 
     try {
@@ -107,8 +107,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             </label>
             <input
               type="text"
-              name="nomeCompleto"
-              value={form.nomeCompleto}
+              name="fullName"
+              value={form.fullName}
               onChange={handleChange}
               required
               maxLength={200}
@@ -123,8 +123,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             </label>
             <input
               type="date"
-              name="dataNascimento"
-              value={form.dataNascimento}
+              name="birthDate"
+              value={form.birthDate}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -137,8 +137,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             </label>
             <input
               type="date"
-              name="dataFalecimento"
-              value={form.dataFalecimento}
+              name="deathDate"
+              value={form.deathDate}
               onChange={handleChange}
               required
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -149,8 +149,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Naturalidade</label>
             <input
               type="text"
-              name="naturalidade"
-              value={form.naturalidade}
+              name="birthPlace"
+              value={form.birthPlace}
               onChange={handleChange}
               maxLength={100}
               placeholder="Cidade — Estado"
@@ -162,8 +162,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Nacionalidade</label>
             <input
               type="text"
-              name="nacionalidade"
-              value={form.nacionalidade}
+              name="nationality"
+              value={form.nationality}
               onChange={handleChange}
               maxLength={100}
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -174,8 +174,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Nome do pai</label>
             <input
               type="text"
-              name="nomePai"
-              value={form.nomePai}
+              name="fatherName"
+              value={form.fatherName}
               onChange={handleChange}
               maxLength={200}
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -186,8 +186,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             <label className="block text-sm font-medium text-neutral-700 mb-1">Nome da mãe</label>
             <input
               type="text"
-              name="nomeMae"
-              value={form.nomeMae}
+              name="motherName"
+              value={form.motherName}
               onChange={handleChange}
               maxLength={200}
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -197,8 +197,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
           <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-neutral-700 mb-1">Observações</label>
             <textarea
-              name="observacoes"
-              value={form.observacoes}
+              name="notes"
+              value={form.notes}
               onChange={handleChange}
               rows={3}
               className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
@@ -234,8 +234,8 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-neutral-700 mb-1">Causa mortis</label>
               <textarea
-                name="causaMortis"
-                value={form.causaMortis}
+                name="causeOfDeath"
+                value={form.causeOfDeath}
                 onChange={handleChange}
                 rows={2}
                 maxLength={500}
