@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@shared/database/prisma.service';
 import { AuditService } from '@shared/audit/audit.service';
-import { CreateBlockDto } from './dto/create-quadra.dto';
-import { UpdateBlockDto } from './dto/update-quadra.dto';
-import { QueryBlockDto } from './dto/query-quadra.dto';
+import { CreateBlockDto } from './dto/create-block.dto';
+import { UpdateBlockDto } from './dto/update-block.dto';
+import { QueryBlockDto } from './dto/query-block.dto';
 
 @Injectable()
-export class QuadraService {
+export class BlockService {
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,

@@ -17,8 +17,10 @@ import { CreateCemeteryDto } from './dto/create-cemetery.dto';
 import { UpdateCemeteryDto } from './dto/update-cemetery.dto';
 import { QueryCemeteryDto } from './dto/query-cemetery.dto';
 import { Roles } from '@shared/decorators/roles.decorator';
+import { RequirePermission } from '@shared/decorators/require-permission.decorator';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
+import { SystemModule, PermissionAction } from '@prisma/client';
 
 @Controller('cemeteries')
 export class CemeteryController {
@@ -26,6 +28,7 @@ export class CemeteryController {
 
   @Post()
   @Roles('ADMIN', 'MANAGER')
+  @RequirePermission(SystemModule.CEMETERIES, PermissionAction.CREATE)
   create(
     @Body() dto: CreateCemeteryDto,
     @CurrentUser() user: UserPayload,
@@ -36,18 +39,21 @@ export class CemeteryController {
 
   @Get()
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.CEMETERIES, PermissionAction.VIEW)
   findAll(@Query() query: QueryCemeteryDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.CEMETERIES, PermissionAction.VIEW)
   findOne(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findOne(id, user.tenantId);
   }
 
   @Patch(':id')
   @Roles('ADMIN', 'MANAGER')
+  @RequirePermission(SystemModule.CEMETERIES, PermissionAction.EDIT)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateCemeteryDto,
@@ -60,6 +66,7 @@ export class CemeteryController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles('ADMIN')
+  @RequirePermission(SystemModule.CEMETERIES, PermissionAction.DELETE)
   remove(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,

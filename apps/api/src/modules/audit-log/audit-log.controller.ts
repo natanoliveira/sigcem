@@ -1,6 +1,8 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { PrismaService } from '@shared/database/prisma.service';
 import { Roles } from '@shared/decorators/roles.decorator';
+import { RequirePermission } from '@shared/decorators/require-permission.decorator';
+import { SystemModule, PermissionAction } from '@prisma/client';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
 import { QueryAuditLogDto } from './dto/query-audit-log.dto';
@@ -11,6 +13,7 @@ export class AuditLogController {
   constructor(private prisma: PrismaService) {}
 
   @Get()
+  @RequirePermission(SystemModule.AUDIT, PermissionAction.VIEW)
   async findAll(@Query() query: QueryAuditLogDto, @CurrentUser() user: UserPayload) {
     const { entityType, entityId, userId, action, startDate, endDate, page = 1, limit = 50 } = query;
     const skip = (page - 1) * limit;
@@ -40,6 +43,7 @@ export class AuditLogController {
   }
 
   @Get(':id')
+  @RequirePermission(SystemModule.AUDIT, PermissionAction.VIEW)
   async findOne(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.prisma.auditLog.findFirst({
       where: { id, tenantId: user.tenantId },

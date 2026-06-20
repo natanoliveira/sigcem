@@ -7,10 +7,10 @@ import {
 import { GraveStatus } from '@prisma/client';
 import { PrismaService } from '@shared/database/prisma.service';
 import { AuditService } from '@shared/audit/audit.service';
-import { CreateGraveDto } from './dto/create-jazigo.dto';
-import { UpdateGraveDto } from './dto/update-jazigo.dto';
-import { QueryGraveDto } from './dto/query-jazigo.dto';
-import { ChangeStatusGraveDto } from './dto/change-status-jazigo.dto';
+import { CreateGraveDto } from './dto/create-grave.dto';
+import { UpdateGraveDto } from './dto/update-grave.dto';
+import { QueryGraveDto } from './dto/query-grave.dto';
+import { ChangeStatusGraveDto } from './dto/change-status-grave.dto';
 
 // Transições permitidas por status atual
 const ALLOWED_TRANSITIONS: Record<GraveStatus, GraveStatus[]> = {
@@ -21,7 +21,7 @@ const ALLOWED_TRANSITIONS: Record<GraveStatus, GraveStatus[]> = {
 };
 
 @Injectable()
-export class JazigoService {
+export class GraveService {
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,

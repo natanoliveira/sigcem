@@ -19,6 +19,8 @@ import { DocumentService } from './document.service';
 import { QueryDocumentDto } from './dto/query-document.dto';
 import { EmitCertificateDto } from './dto/emit-certificate.dto';
 import { Roles } from '@shared/decorators/roles.decorator';
+import { RequirePermission } from '@shared/decorators/require-permission.decorator';
+import { SystemModule, PermissionAction } from '@prisma/client';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
 
@@ -29,6 +31,7 @@ export class DocumentController {
   // T-034 — upload
   @Post('upload')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.DOCUMENTS, PermissionAction.CREATE)
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   upload(
     @UploadedFile() file: Express.Multer.File,
@@ -60,6 +63,7 @@ export class DocumentController {
 
   @Get()
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.DOCUMENTS, PermissionAction.VIEW)
   findAll(@Query() query: QueryDocumentDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
@@ -67,6 +71,7 @@ export class DocumentController {
   // T-035 — download com URL assinada
   @Get(':id/download')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.DOCUMENTS, PermissionAction.VIEW)
   download(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
@@ -78,6 +83,7 @@ export class DocumentController {
   // T-036 — inativação
   @Patch(':id/inativar')
   @Roles('ADMIN', 'MANAGER')
+  @RequirePermission(SystemModule.DOCUMENTS, PermissionAction.DELETE)
   inativar(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
@@ -89,6 +95,7 @@ export class DocumentController {
   // T-039 — emissão de certidão
   @Post('certidao')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.DOCUMENTS, PermissionAction.CREATE)
   emitirCertidao(
     @Body() dto: EmitCertificateDto,
     @CurrentUser() user: UserPayload,

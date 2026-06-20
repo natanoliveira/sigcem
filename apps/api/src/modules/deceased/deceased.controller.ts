@@ -17,6 +17,8 @@ import { CreateDeceasedDto } from './dto/create-deceased.dto';
 import { UpdateDeceasedDto } from './dto/update-deceased.dto';
 import { QueryDeceasedDto } from './dto/query-deceased.dto';
 import { Roles } from '@shared/decorators/roles.decorator';
+import { RequirePermission } from '@shared/decorators/require-permission.decorator';
+import { SystemModule, PermissionAction } from '@prisma/client';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
 
@@ -26,6 +28,7 @@ export class DeceasedController {
 
   @Post()
   @Roles('ADMIN', 'MANAGER', 'OPERATOR')
+  @RequirePermission(SystemModule.DECEASED, PermissionAction.CREATE)
   create(
     @Body() dto: CreateDeceasedDto,
     @CurrentUser() user: UserPayload,
@@ -36,12 +39,14 @@ export class DeceasedController {
 
   @Get()
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.DECEASED, PermissionAction.VIEW)
   findAll(@Query() query: QueryDeceasedDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.DECEASED, PermissionAction.VIEW)
   findOne(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
@@ -52,6 +57,7 @@ export class DeceasedController {
 
   @Patch(':id')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR')
+  @RequirePermission(SystemModule.DECEASED, PermissionAction.EDIT)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateDeceasedDto,
@@ -64,6 +70,7 @@ export class DeceasedController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles('ADMIN')
+  @RequirePermission(SystemModule.DECEASED, PermissionAction.DELETE)
   remove(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,

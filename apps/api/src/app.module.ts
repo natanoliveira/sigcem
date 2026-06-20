@@ -11,8 +11,8 @@ import { PermissionsGuard } from '@shared/guards/permissions.guard';
 import { HealthModule } from './modules/health/health.module';
 import { IamModule } from './modules/iam/iam.module';
 import { CemeteryModule } from './modules/cemetery/cemetery.module';
-import { QuadraModule } from './modules/quadra/quadra.module';
-import { JazigoModule } from './modules/jazigo/jazigo.module';
+import { BlockModule } from './modules/block/block.module';
+import { GraveModule } from './modules/grave/grave.module';
 import { DeceasedModule } from './modules/deceased/deceased.module';
 import { BurialModule } from './modules/burial/burial.module';
 import { DocumentModule } from './modules/document/document.module';
@@ -31,8 +31,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     IamModule,
     HealthModule,
     CemeteryModule,
-    QuadraModule,
-    JazigoModule,
+    BlockModule,
+    GraveModule,
     DeceasedModule,
     BurialModule,
     DocumentModule,

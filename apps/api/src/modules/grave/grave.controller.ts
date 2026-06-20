@@ -12,21 +12,24 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JazigoService } from './jazigo.service';
-import { CreateGraveDto } from './dto/create-jazigo.dto';
-import { UpdateGraveDto } from './dto/update-jazigo.dto';
-import { QueryGraveDto } from './dto/query-jazigo.dto';
-import { ChangeStatusGraveDto } from './dto/change-status-jazigo.dto';
+import { GraveService } from './grave.service';
+import { CreateGraveDto } from './dto/create-grave.dto';
+import { UpdateGraveDto } from './dto/update-grave.dto';
+import { QueryGraveDto } from './dto/query-grave.dto';
+import { ChangeStatusGraveDto } from './dto/change-status-grave.dto';
 import { Roles } from '@shared/decorators/roles.decorator';
+import { RequirePermission } from '@shared/decorators/require-permission.decorator';
+import { SystemModule, PermissionAction } from '@prisma/client';
 import { CurrentUser } from '@shared/decorators/current-user.decorator';
 import { UserPayload } from '@shared/types/user-payload.type';
 
-@Controller('jazigos')
-export class JazigoController {
-  constructor(private readonly service: JazigoService) {}
+@Controller('graves')
+export class GraveController {
+  constructor(private readonly service: GraveService) {}
 
   @Post()
   @Roles('ADMIN', 'MANAGER')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.CREATE)
   create(
     @Body() dto: CreateGraveDto,
     @CurrentUser() user: UserPayload,
@@ -37,18 +40,21 @@ export class JazigoController {
 
   @Get()
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.VIEW)
   findAll(@Query() query: QueryGraveDto, @CurrentUser() user: UserPayload) {
     return this.service.findAll(query, user.tenantId);
   }
 
   @Get(':id')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.VIEW)
   findOne(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findOne(id, user.tenantId);
   }
 
   @Patch(':id')
   @Roles('ADMIN', 'MANAGER')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.EDIT)
   update(
     @Param('id') id: string,
     @Body() dto: UpdateGraveDto,
@@ -61,6 +67,7 @@ export class JazigoController {
   // T-020 — transição de status via rota dedicada
   @Patch(':id/status')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.EDIT)
   changeStatus(
     @Param('id') id: string,
     @Body() dto: ChangeStatusGraveDto,
@@ -73,6 +80,7 @@ export class JazigoController {
   // T-021 — histórico de status
   @Get(':id/historico')
   @Roles('ADMIN', 'MANAGER', 'OPERATOR', 'DOCUMENT_AGENT')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.VIEW)
   findHistorico(@Param('id') id: string, @CurrentUser() user: UserPayload) {
     return this.service.findHistorico(id, user.tenantId);
   }
@@ -80,6 +88,7 @@ export class JazigoController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles('ADMIN')
+  @RequirePermission(SystemModule.GRAVES, PermissionAction.DELETE)
   remove(
     @Param('id') id: string,
     @CurrentUser() user: UserPayload,
