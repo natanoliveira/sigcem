@@ -17,9 +17,11 @@ interface CemeteryFormData {
 interface CemeteryFormProps {
   initialData?: Partial<CemeteryFormData> & { id?: string };
   mode: 'create' | 'edit';
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
+export function CemeteryForm({ initialData, mode, onSuccess, onCancel }: CemeteryFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -56,8 +58,12 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
           await api.patch(`/api/v1/cemeteries/${initialData!.id}`, payload);
         }
         toast.success('Cemitério salvo com sucesso.');
-        router.push('/cemiterios');
-        router.refresh();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push('/cemiterios');
+          router.refresh();
+        }
       } catch (err: any) {
         const msg = err.message ?? 'Erro ao salvar';
         setError(msg);
@@ -156,7 +162,7 @@ export function CemeteryForm({ initialData, mode }: CemeteryFormProps) {
       <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => onCancel ? onCancel() : router.back()}
           disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
         >

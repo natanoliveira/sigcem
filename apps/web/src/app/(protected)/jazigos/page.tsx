@@ -6,15 +6,15 @@ import { Plus, Search, Pencil, Trash2, Eye, MapPin } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useConfirm } from '@/components/providers/confirm-provider';
 import { EmptyState } from '@/components/ui/empty-state';
+import { FormModal } from '@/components/ui/form-modal';
+import { JazigoForm } from '@/components/jazigo/jazigo-form';
+import { JazigoDrawer } from '@/components/jazigo/jazigo-drawer';
 
 const TIPO_LABEL: Record<string, string> = {
-  SINGLE: 'Simples',
-  DOUBLE: 'Duplo',
-  DRAWER: 'Gaveta',
-  OSSUARY: 'Ossário',
-  PERPETUAL: 'Perpétuo',
+  SINGLE: 'Simples', DOUBLE: 'Duplo', DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário', PERPETUAL: 'Perpétuo',
 };
 
 interface Jazigo {
@@ -23,11 +23,7 @@ interface Jazigo {
   type: string;
   status: string;
   locationRef: string | null;
-  block: {
-    id: string;
-    code: string;
-    cemetery: { id: string; name: string };
-  };
+  block: { id: string; code: string; cemetery: { id: string; name: string } };
 }
 
 interface ApiResponse {
@@ -36,13 +32,14 @@ interface ApiResponse {
 }
 
 export default function JazigosPage() {
+  const confirm = useConfirm();
   const [result, setResult] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
-  const [deleteTarget, setDeleteTarget] = useState<Jazigo | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [drawerJazigoId, setDrawerJazigoId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -64,18 +61,47 @@ export default function JazigosPage() {
     return () => clearTimeout(t);
   }, [fetchData, search]);
 
-  async function handleDelete() {
-    if (!deleteTarget) return;
-    setDeleting(true);
+  async function handleDelete(jazigo: Jazigo) {
+    const ok = await confirm({
+      title: 'Excluir jazigo',
+      description: `Tem certeza que deseja excluir o jazigo "${jazigo.code}"? Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    });
+    if (!ok) return;
     try {
-      await api.delete(`/api/v1/graves/${deleteTarget.id}`);
-      setDeleteTarget(null);
+      await api.delete(`/api/v1/graves/${jazigo.id}`);
       fetchData();
-    } catch {
-    } finally {
-      setDeleting(false);
-    }
+    } catch {}
   }
+
+  const ActionButtons = ({ j }: { j: Jazigo }) => (
+    <div className="flex items-center gap-1">
+      <button onClick={() => setDrawerJazigoId(j.id)} className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted" title="Detalhes">
+        <Eye size={15} />
+      </button>
+      <Link href={`/jazigos/${j.id}/editar`} className="p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-primary/10" title="Editar">
+        <Pencil size={15} />
+      </Link>
+      <button onClick={() => handleDelete(j)} className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Excluir">
+        <Trash2 size={15} />
+      </button>
+    </div>
+  );
+
+  const Pagination = () => result && result.meta.totalPages > 1 ? (
+    <div className="px-4 py-3 border-t border-border flex items-center justify-between text-[13px] text-muted-foreground">
+      <span>{result.meta.total} jazigos — pág. {result.meta.page}/{result.meta.totalPages}</span>
+      <div className="flex gap-2">
+        <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
+          className="px-3 py-1 border border-border rounded-lg hover:bg-muted disabled:opacity-40 text-[12px]">Anterior</button>
+        <button onClick={() => setPage((p) => Math.min(result.meta.totalPages, p + 1))} disabled={page === result.meta.totalPages}
+          className="px-3 py-1 border border-border rounded-lg hover:bg-muted disabled:opacity-40 text-[12px]">Próxima</button>
+      </div>
+    </div>
+  ) : null;
+
+  const hasFilter = search || statusFilter;
 
   return (
     <div className="space-y-6">
@@ -84,33 +110,25 @@ export default function JazigosPage() {
         description="Unidades de sepultamento cadastradas"
         breadcrumbs={[{ label: 'Estrutura' }, { label: 'Jazigos' }]}
         action={
-          <Link
-            href="/jazigos/novo"
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-          >
-            <Plus size={16} />
-            Novo jazigo
-          </Link>
+          <button onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-[600] text-white bg-primary rounded-lg hover:bg-primary/90">
+            <Plus size={15} />Novo jazigo
+          </button>
         }
       />
 
-      <div className="bg-white rounded-xl border border-neutral-200">
-        <div className="p-4 border-b border-neutral-100 flex flex-wrap gap-3">
+      <div className="bg-card rounded-xl border border-border shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <div className="p-4 border-b border-border flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-48">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              value={search}
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="text" value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Buscar por código ou localização..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 text-[13px] bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-[13px] bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
             <option value="">Todos os status</option>
             <option value="AVAILABLE">Disponível</option>
             <option value="OCCUPIED">Ocupado</option>
@@ -119,124 +137,105 @@ export default function JazigosPage() {
           </select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        {/* Mobile cards */}
+        <div className="md:hidden">
+          {loading ? (
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />)}
+            </div>
+          ) : result?.data.length === 0 ? (
+            <EmptyState icon={MapPin}
+              title={hasFilter ? 'Nenhum jazigo encontrado com os filtros aplicados.' : 'Nenhum jazigo cadastrado.'}
+              description={!hasFilter ? "Toque em 'Novo jazigo' para começar." : undefined}
+            />
+          ) : (
+            <div className="p-3 space-y-3">
+              {result?.data.map((j) => (
+                <div key={j.id} className="bg-background border border-border rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <span className="text-[15px] font-mono font-[700] text-foreground">{j.code}</span>
+                      <p className="text-[12px] text-muted-foreground mt-0.5">{TIPO_LABEL[j.type] ?? j.type}</p>
+                    </div>
+                    <StatusBadge status={j.status} />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                    <Link href={`/quadras/${j.block.id}`} className="font-mono text-primary hover:underline">{j.block.code}</Link>
+                    <span>·</span>
+                    <Link href={`/cemiterios/${j.block.cemetery.id}`} className="truncate hover:text-primary hover:underline">{j.block.cemetery.name}</Link>
+                  </div>
+                  {j.locationRef && <p className="text-[11px] text-muted-foreground/70 mt-1">{j.locationRef}</p>}
+                  <div className="flex justify-end mt-3 pt-3 border-t border-border">
+                    <ActionButtons j={j} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <Pagination />
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-neutral-100 bg-neutral-50">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Código</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Tipo</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Localização</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Quadra</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Cemitério</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Status</th>
+              <tr className="border-b border-border bg-muted/40">
+                {['Código', 'Tipo', 'Localização', 'Quadra', 'Cemitério', 'Status'].map((h) => (
+                  <th key={h} className="text-left px-4 py-3 text-[11px] font-[700] text-muted-foreground uppercase tracking-wider">{h}</th>
+                ))}
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
-                  <tr key={i} className="border-b border-neutral-50">
-                    {Array.from({ length: 7 }).map((_, j) => (
-                      <td key={j} className="px-4 py-3">
-                        <div className="h-4 bg-neutral-100 rounded animate-pulse" />
-                      </td>
-                    ))}
+                  <tr key={i} className="border-b border-border/50">
+                    {Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-muted rounded animate-pulse" /></td>)}
                   </tr>
                 ))
               ) : result?.data.length === 0 ? (
-                <tr>
-                  <td colSpan={7}>
-                    <EmptyState
-                      icon={MapPin}
-                      title={search || statusFilter ? 'Nenhum jazigo encontrado com os filtros aplicados.' : 'Nenhum jazigo cadastrado.'}
-                      description={!search && !statusFilter ? "Clique em 'Novo jazigo' para começar." : undefined}
-                    />
-                  </td>
-                </tr>
+                <tr><td colSpan={7}><EmptyState icon={MapPin}
+                  title={hasFilter ? 'Nenhum jazigo encontrado com os filtros aplicados.' : 'Nenhum jazigo cadastrado.'}
+                  description={!hasFilter ? "Clique em 'Novo jazigo' para começar." : undefined}
+                /></td></tr>
               ) : (
                 result?.data.map((j) => (
-                  <tr key={j.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3 font-mono font-semibold text-neutral-900">{j.code}</td>
-                    <td className="px-4 py-3 text-neutral-600">{TIPO_LABEL[j.type] ?? j.type}</td>
-                    <td className="px-4 py-3 text-neutral-500 text-xs">{j.locationRef ?? '—'}</td>
+                  <tr key={j.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 font-mono font-[700] text-foreground">{j.code}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{TIPO_LABEL[j.type] ?? j.type}</td>
+                    <td className="px-4 py-3 text-muted-foreground/70 text-[12px]">{j.locationRef ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <Link href={`/quadras/${j.block.id}`} className="text-primary-600 hover:underline font-mono">
-                        {j.block.code}
-                      </Link>
+                      <Link href={`/quadras/${j.block.id}`} className="text-primary hover:underline font-mono">{j.block.code}</Link>
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/cemiterios/${j.block.cemetery.id}`} className="text-neutral-600 hover:text-primary-600 hover:underline text-xs">
-                        {j.block.cemetery.name}
-                      </Link>
+                      <Link href={`/cemiterios/${j.block.cemetery.id}`} className="text-muted-foreground hover:text-primary hover:underline text-[12px]">{j.block.cemetery.name}</Link>
                     </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={j.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/jazigos/${j.id}`}
-                          className="p-1.5 rounded text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"
-                          title="Detalhes"
-                        >
-                          <Eye size={15} />
-                        </Link>
-                        <Link
-                          href={`/jazigos/${j.id}/editar`}
-                          className="p-1.5 rounded text-neutral-400 hover:text-primary-600 hover:bg-primary-50"
-                          title="Editar"
-                        >
-                          <Pencil size={15} />
-                        </Link>
-                        <button
-                          onClick={() => setDeleteTarget(j)}
-                          className="p-1.5 rounded text-neutral-400 hover:text-red-600 hover:bg-red-50"
-                          title="Excluir"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+                    <td className="px-4 py-3"><StatusBadge status={j.status} /></td>
+                    <td className="px-4 py-3"><div className="flex justify-end"><ActionButtons j={j} /></div></td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+          <Pagination />
         </div>
-
-        {result && result.meta.totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
-            <span>
-              {result.meta.total} jazigos — página {result.meta.page} de {result.meta.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(result.meta.totalPages, p + 1))}
-                disabled={page === result.meta.totalPages}
-                className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Próxima
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        title="Excluir jazigo"
-        description={`Tem certeza que deseja excluir o jazigo "${deleteTarget?.code}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Excluir"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
-        loading={deleting}
+      <FormModal open={createOpen} onOpenChange={setCreateOpen}
+        title="Novo jazigo" description="Preencha os dados para cadastrar um novo jazigo.">
+        <div className="p-6">
+          <JazigoForm mode="create"
+            onSuccess={() => { setCreateOpen(false); fetchData(); }}
+            onCancel={() => setCreateOpen(false)}
+          />
+        </div>
+      </FormModal>
+
+      <JazigoDrawer
+        jazigoId={drawerJazigoId}
+        open={!!drawerJazigoId}
+        onClose={() => setDrawerJazigoId(null)}
+        onStatusChange={fetchData}
       />
     </div>
   );

@@ -1,7 +1,19 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info, ShieldAlert } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
+
+export type ConfirmVariant = 'danger' | 'warning' | 'info';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -12,8 +24,34 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  variant?: 'danger' | 'warning';
+  variant?: ConfirmVariant;
 }
+
+const VARIANT_META: Record<ConfirmVariant, {
+  icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
+  confirmClass: string;
+}> = {
+  danger: {
+    icon: ShieldAlert,
+    iconBg: 'bg-destructive/10',
+    iconColor: 'text-destructive',
+    confirmClass: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+  },
+  warning: {
+    icon: AlertTriangle,
+    iconBg: 'bg-amber-500/10',
+    iconColor: 'text-amber-600',
+    confirmClass: 'bg-amber-500 text-white hover:bg-amber-600',
+  },
+  info: {
+    icon: Info,
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
+    confirmClass: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  },
+};
 
 export function ConfirmDialog({
   open,
@@ -26,45 +64,50 @@ export function ConfirmDialog({
   loading,
   variant = 'danger',
 }: ConfirmDialogProps) {
-  if (!open) return null;
+  const meta = VARIANT_META[variant];
+  const Icon = meta.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-start gap-4">
-          <div className={`p-2 rounded-full ${variant === 'danger' ? 'bg-red-50' : 'bg-yellow-50'}`}>
-            <AlertTriangle
-              size={20}
-              className={variant === 'danger' ? 'text-red-600' : 'text-yellow-600'}
-            />
+    <AlertDialog open={open} onOpenChange={(o) => { if (!o) onCancel(); }}>
+      <AlertDialogContent className="max-w-[400px]">
+        <AlertDialogHeader>
+          <div className="flex items-start gap-4">
+            <div className={cn('p-2.5 rounded-xl shrink-0', meta.iconBg)}>
+              <Icon size={20} className={meta.iconColor} />
+            </div>
+            <div className="flex-1 min-w-0 pt-0.5">
+              <AlertDialogTitle className="text-[15px] font-[700] text-foreground leading-tight">
+                {title}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+                {description}
+              </AlertDialogDescription>
+            </div>
           </div>
-          <div className="flex-1">
-            <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
-            <p className="text-sm text-neutral-600 mt-1">{description}</p>
-          </div>
-        </div>
-        <div className="flex justify-end gap-3 mt-6">
-          <button
+        </AlertDialogHeader>
+
+        <AlertDialogFooter className="mt-2 gap-2">
+          <AlertDialogCancel
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
+            className="h-9 px-4 text-[13px]"
           >
             {cancelLabel}
-          </button>
-          <button
+          </AlertDialogCancel>
+          <AlertDialogAction
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-50 ${
-              variant === 'danger'
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-yellow-600 hover:bg-yellow-700'
-            }`}
+            className={cn('h-9 px-4 text-[13px] font-[600]', meta.confirmClass)}
           >
-            {loading ? 'Aguarde...' : confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                Aguarde...
+              </span>
+            ) : confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

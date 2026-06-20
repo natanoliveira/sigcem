@@ -1,32 +1,55 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { Pencil, Grid3x3 } from 'lucide-react';
+import { Pencil, LayoutGrid } from 'lucide-react';
+import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-async function getCemetery(id: string, token: string) {
-  const res = await fetch(`${API_URL}/api/v1/cemeteries/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) return null;
-  return res.json();
+interface Cemetery {
+  id: string;
+  name: string;
+  address: string;
+  neighborhood: string | null;
+  areaM2: number | null;
+  capacity: number | null;
+  status: string;
+  createdAt: string;
+  blocks: { id: string; code: string; name: string | null; status: string; _count: { graves: number } }[];
 }
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
+export default function DetalheCemiterioPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [cemetery, setCemetery] = useState<Cemetery | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function DetalheCemiterioPage({ params }: Props) {
-  const { id } = await params;
-  const session = await getServerSession(authOptions) as { accessToken?: string } | null;
-  const cemetery = await getCemetery(id, session?.accessToken ?? '');
+  const fetchCemetery = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.get(`/api/v1/cemeteries/${id}`);
+      setCemetery(data);
+    } catch {
+      router.replace('/cemiterios');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, router]);
 
-  if (!cemetery) notFound();
+  useEffect(() => { fetchCemetery(); }, [fetchCemetery]);
+
+  if (loading || !cemetery) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-56 bg-muted rounded animate-pulse" />
+        <div className="h-10 w-64 bg-muted rounded animate-pulse" />
+        <div className="bg-card rounded-xl border border-border p-6 h-64 animate-pulse" />
+      </div>
+    );
+  }
 
   const createdAt = new Date(cemetery.createdAt).toLocaleDateString('pt-BR', {
     day: '2-digit', month: 'long', year: 'numeric',
@@ -42,87 +65,95 @@ export default async function DetalheCemiterioPage({ params }: Props) {
           { label: cemetery.name },
         ]}
         action={
-          <Link
-            href={`/cemiterios/${id}/editar`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-          >
-            <Pencil size={15} />
-            Editar
+          <Link href={`/cemiterios/${id}/editar`}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-[600] text-white bg-primary rounded-lg hover:bg-primary/90">
+            <Pencil size={13} />Editar
           </Link>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 p-6">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Informações gerais</h2>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Status</dt>
-              <dd className="mt-1"><StatusBadge status={cemetery.status} /></dd>
-            </div>
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Cadastrado em</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{createdAt}</dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Endereço</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{cemetery.address}</dd>
-            </div>
-            {cemetery.neighborhood && (
-              <div>
-                <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Bairro</dt>
-                <dd className="mt-1 text-sm text-neutral-900">{cemetery.neighborhood}</dd>
-              </div>
-            )}
-            {cemetery.areaM2 != null && (
-              <div>
-                <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Área</dt>
-                <dd className="mt-1 text-sm text-neutral-900">
-                  {Number(cemetery.areaM2).toLocaleString('pt-BR')} m²
-                </dd>
-              </div>
-            )}
-            {cemetery.capacity != null && (
-              <div>
-                <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Capacidade</dt>
-                <dd className="mt-1 text-sm text-neutral-900">
-                  {cemetery.capacity.toLocaleString('pt-BR')} jazigos
-                </dd>
-              </div>
-            )}
-          </dl>
-        </div>
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">Informações</TabsTrigger>
+          <TabsTrigger value="blocks">Quadras ({cemetery.blocks.length})</TabsTrigger>
+        </TabsList>
 
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Quadras</h2>
-          {cemetery.blocks?.length === 0 ? (
-            <div className="text-center py-6">
-              <Grid3x3 size={28} className="mx-auto text-neutral-300 mb-2" />
-              <p className="text-xs text-neutral-500">Nenhuma quadra cadastrada</p>
-              <Link
-                href={`/quadras/nova?cemiterioId=${id}`}
-                className="mt-3 inline-block text-xs text-primary-600 hover:underline"
-              >
-                Adicionar quadra
-              </Link>
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {cemetery.blocks?.map((q: any) => (
-                <li key={q.id}>
-                  <Link
-                    href={`/quadras/${q.id}`}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 transition-colors"
-                  >
-                    <span className="text-sm font-medium text-neutral-900">{q.code}</span>
-                    <StatusBadge status={q.status} />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+        <TabsContent value="info" className="mt-4">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Status</dt>
+                <dd className="mt-1"><StatusBadge status={cemetery.status} /></dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Cadastrado em</dt>
+                <dd className="mt-1 text-[13px] text-foreground">{createdAt}</dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Endereço</dt>
+                <dd className="mt-1 text-[13px] text-foreground">{cemetery.address}</dd>
+              </div>
+              {cemetery.neighborhood && (
+                <div>
+                  <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Bairro</dt>
+                  <dd className="mt-1 text-[13px] text-foreground">{cemetery.neighborhood}</dd>
+                </div>
+              )}
+              {cemetery.areaM2 != null && (
+                <div>
+                  <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Área</dt>
+                  <dd className="mt-1 text-[13px] text-foreground">{Number(cemetery.areaM2).toLocaleString('pt-BR')} m²</dd>
+                </div>
+              )}
+              {cemetery.capacity != null && (
+                <div>
+                  <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Capacidade</dt>
+                  <dd className="mt-1 text-[13px] text-foreground">{cemetery.capacity.toLocaleString('pt-BR')} jazigos</dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="blocks" className="mt-4">
+          <div className="bg-card rounded-xl border border-border">
+            {cemetery.blocks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 gap-3">
+                <LayoutGrid size={28} className="text-muted-foreground/40" />
+                <p className="text-[13px] text-muted-foreground">Nenhuma quadra cadastrada</p>
+                <Link href={`/quadras?cemiterioId=${id}`}
+                  className="text-[12px] text-primary hover:underline">
+                  Adicionar quadra
+                </Link>
+              </div>
+            ) : (
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    {['Código', 'Nome', 'Jazigos', 'Status'].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-[700] text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {cemetery.blocks.map((q) => (
+                    <tr key={q.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 font-mono font-[700] text-foreground">{q.code}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{q.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{q._count.graves}</td>
+                      <td className="px-4 py-3"><StatusBadge status={q.status} /></td>
+                      <td className="px-4 py-3 text-right">
+                        <Link href={`/quadras/${q.id}`} className="text-[12px] text-primary hover:underline">Ver</Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -23,11 +23,13 @@ interface DeceasedFormData {
 interface DeceasedFormProps {
   initialData?: Partial<DeceasedFormData> & { id?: string };
   mode: 'create' | 'edit';
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 const SENSITIVE_ROLES = ['ADMIN', 'MANAGER'];
 
-export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
+export function DeceasedForm({ initialData, mode, onSuccess, onCancel }: DeceasedFormProps) {
   const router = useRouter();
   const { data: session } = useSession() as { data: { roles?: string[] } | null };
   const roles: string[] = (session as any)?.roles ?? [];
@@ -83,8 +85,12 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
           await api.patch(`/api/v1/deceased/${initialData!.id}`, payload);
         }
         toast.success('Falecido salvo com sucesso.');
-        router.push('/falecidos');
-        router.refresh();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push('/falecidos');
+          router.refresh();
+        }
       } catch (err: any) {
         const msg = err.message ?? 'Erro ao salvar';
         setError(msg);
@@ -260,7 +266,7 @@ export function DeceasedForm({ initialData, mode }: DeceasedFormProps) {
       <div className="flex items-center justify-end gap-3">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => onCancel ? onCancel() : router.back()}
           disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
         >

@@ -1,40 +1,63 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, MapPin } from 'lucide-react';
+import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
-const graveTypeLabel: Record<string, string> = {
-  SINGLE: 'Simples',
-  DOUBLE: 'Duplo',
-  DRAWER: 'Gaveta',
-  OSSUARY: 'Ossário',
-  PERPETUAL: 'Perpétuo',
+const TIPO_LABEL: Record<string, string> = {
+  SINGLE: 'Simples', DOUBLE: 'Duplo', DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário', PERPETUAL: 'Perpétuo',
 };
 
-async function getQuadra(id: string, token: string) {
-  const res = await fetch(`${API_URL}/api/v1/blocks/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
+interface Grave {
+  id: string; code: string; type: string; status: string; locationRef: string | null;
+}
+
+interface Quadra {
+  id: string; code: string; name: string | null; capacity: number | null; status: string;
+  createdAt: string;
+  cemetery: { id: string; name: string };
+  graves: Grave[];
+}
+
+export default function DetalheQuadraPage() {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [quadra, setQuadra] = useState<Quadra | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchQuadra = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.get(`/api/v1/blocks/${id}`);
+      setQuadra(data);
+    } catch {
+      router.replace('/quadras');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, router]);
+
+  useEffect(() => { fetchQuadra(); }, [fetchQuadra]);
+
+  if (loading || !quadra) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+        <div className="h-10 w-64 bg-muted rounded animate-pulse" />
+        <div className="bg-card rounded-xl border border-border p-6 h-48 animate-pulse" />
+      </div>
+    );
+  }
+
+  const createdAt = new Date(quadra.createdAt).toLocaleDateString('pt-BR', {
+    day: '2-digit', month: 'long', year: 'numeric',
   });
-  if (!res.ok) return null;
-  return res.json();
-}
-
-interface Props {
-  params: Promise<{ id: string }>;
-}
-
-export default async function DetalheQuadraPage({ params }: Props) {
-  const { id } = await params;
-  const session = await getServerSession(authOptions) as { accessToken?: string } | null;
-  const quadra = await getQuadra(id, session?.accessToken ?? '');
-
-  if (!quadra) notFound();
 
   return (
     <div className="space-y-6">
@@ -47,93 +70,83 @@ export default async function DetalheQuadraPage({ params }: Props) {
           { label: quadra.code },
         ]}
         action={
-          <Link
-            href={`/quadras/${id}/editar`}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-          >
-            <Pencil size={15} />
-            Editar
+          <Link href={`/quadras/${id}/editar`}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-[600] text-white bg-primary rounded-lg hover:bg-primary/90">
+            <Pencil size={13} />Editar
           </Link>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Informações</h2>
-          <dl className="space-y-3">
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Cemitério</dt>
-              <dd className="mt-1">
-                <Link href={`/cemiterios/${quadra.cemetery.id}`} className="text-sm text-primary-600 hover:underline">
-                  {quadra.cemetery.name}
-                </Link>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Status</dt>
-              <dd className="mt-1"><StatusBadge status={quadra.status} /></dd>
-            </div>
-            {quadra.capacity != null && (
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">Informações</TabsTrigger>
+          <TabsTrigger value="graves">Jazigos ({quadra.graves.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="info" className="mt-4">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Capacidade</dt>
-                <dd className="mt-1 text-sm text-neutral-900">
-                  {quadra.capacity.toLocaleString('pt-BR')} jazigos
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Status</dt>
+                <dd className="mt-1"><StatusBadge status={quadra.status} /></dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Cemitério</dt>
+                <dd className="mt-1">
+                  <Link href={`/cemiterios/${quadra.cemetery.id}`} className="text-[13px] text-primary hover:underline">
+                    {quadra.cemetery.name}
+                  </Link>
                 </dd>
               </div>
-            )}
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Jazigos cadastrados</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{quadra.graves?.length ?? 0}</dd>
-            </div>
-          </dl>
-        </div>
-
-        <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-neutral-900">Jazigos</h2>
-            <Link
-              href={`/jazigos/novo?quadraId=${id}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100"
-            >
-              <Plus size={13} />
-              Novo jazigo
-            </Link>
+              {quadra.capacity != null && (
+                <div>
+                  <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Capacidade</dt>
+                  <dd className="mt-1 text-[13px] text-foreground">{quadra.capacity.toLocaleString('pt-BR')} jazigos</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Cadastrado em</dt>
+                <dd className="mt-1 text-[13px] text-foreground">{createdAt}</dd>
+              </div>
+            </dl>
           </div>
+        </TabsContent>
 
-          {quadra.graves?.length === 0 ? (
-            <p className="text-sm text-neutral-500 text-center py-8">Nenhum jazigo cadastrado nesta quadra.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+        <TabsContent value="graves" className="mt-4">
+          <div className="bg-card rounded-xl border border-border">
+            {quadra.graves.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 gap-3">
+                <MapPin size={28} className="text-muted-foreground/40" />
+                <p className="text-[13px] text-muted-foreground">Nenhum jazigo cadastrado nesta quadra</p>
+              </div>
+            ) : (
+              <table className="w-full text-[13px]">
                 <thead>
-                  <tr className="border-b border-neutral-100">
-                    <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Código</th>
-                    <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Tipo</th>
-                    <th className="text-left py-2 px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Status</th>
-                    <th className="py-2 px-3" />
+                  <tr className="border-b border-border bg-muted/40">
+                    {['Código', 'Tipo', 'Localização', 'Status'].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-[11px] font-[700] text-muted-foreground uppercase tracking-wider">{h}</th>
+                    ))}
+                    <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody>
-                  {quadra.graves?.map((j: any) => (
-                    <tr key={j.id} className="border-b border-neutral-50 hover:bg-neutral-50">
-                      <td className="py-2 px-3 font-mono font-semibold text-neutral-900">{j.code}</td>
-                      <td className="py-2 px-3 text-neutral-600">{graveTypeLabel[j.type] ?? j.type}</td>
-                      <td className="py-2 px-3">
-                        <StatusBadge status={j.status} />
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        <Link href={`/jazigos/${j.id}`} className="text-xs text-primary-600 hover:underline">
-                          Ver
-                        </Link>
+                  {quadra.graves.map((j) => (
+                    <tr key={j.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 font-mono font-[700] text-foreground">{j.code}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{TIPO_LABEL[j.type] ?? j.type}</td>
+                      <td className="px-4 py-3 text-muted-foreground/70 text-[12px]">{j.locationRef ?? '—'}</td>
+                      <td className="px-4 py-3"><StatusBadge status={j.status} /></td>
+                      <td className="px-4 py-3 text-right">
+                        <Link href={`/jazigos/${j.id}`} className="text-[12px] text-primary hover:underline">Ver</Link>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

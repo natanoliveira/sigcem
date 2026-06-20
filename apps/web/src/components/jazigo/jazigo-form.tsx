@@ -32,9 +32,11 @@ interface JazigoFormProps {
   initialData?: Partial<GraveFormData> & { id?: string };
   mode: 'create' | 'edit';
   fixedQuadraId?: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps) {
+export function JazigoForm({ initialData, mode, fixedQuadraId, onSuccess, onCancel }: JazigoFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState('');
@@ -81,8 +83,12 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
           await api.patch(`/api/v1/graves/${initialData!.id}`, updatePayload);
         }
         toast.success('Jazigo salvo com sucesso.');
-        router.push(fixedQuadraId ? `/quadras/${fixedQuadraId}` : '/jazigos');
-        router.refresh();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(fixedQuadraId ? `/quadras/${fixedQuadraId}` : '/jazigos');
+          router.refresh();
+        }
       } catch (err: any) {
         const msg = err.message ?? 'Erro ao salvar';
         setError(msg);
@@ -187,7 +193,7 @@ export function JazigoForm({ initialData, mode, fixedQuadraId }: JazigoFormProps
       <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => onCancel ? onCancel() : router.back()}
           disabled={isPending}
           className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50"
         >

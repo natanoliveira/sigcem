@@ -1,10 +1,116 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  * { @apply border-neutral-200; }
-  body { @apply bg-neutral-50 text-neutral-900 font-sans antialiased; }
+  /* ── Fusion C — Light Mode ───────────────────── */
+  :root {
+    /* Layout */
+    --background:            220 20% 96%;    /* #f0f3f9 */
+    --foreground:            222 84% 5%;     /* #0f172a */
+
+    /* Card / Popover */
+    --card:                  0 0% 100%;
+    --card-foreground:       222 84% 5%;
+    --popover:               0 0% 100%;
+    --popover-foreground:    222 84% 5%;
+
+    /* Primary — índigo Fusion #5046e4 */
+    --primary:               248 72% 58%;
+    --primary-foreground:    210 40% 98%;
+
+    /* Secondary / muted */
+    --secondary:             220 14% 93%;
+    --secondary-foreground:  221 39% 37%;   /* #4b5675 */
+    --muted:                 220 13% 93%;
+    --muted-foreground:      218 11% 65%;   /* #9aa3b8 */
+
+    /* Accent */
+    --accent:                220 14% 93%;
+    --accent-foreground:     248 72% 58%;
+
+    /* Destructive */
+    --destructive:           0 72% 51%;     /* #dc2626 */
+    --destructive-foreground:210 40% 98%;
+
+    /* Borders / inputs */
+    --border:                214 32% 90%;   /* #e2e7f0 */
+    --input:                 214 32% 90%;
+    --ring:                  248 72% 58%;
+
+    --radius: 0.625rem;
+
+    /* Charts */
+    --chart-1: 248 72% 58%;   /* indigo */
+    --chart-2: 160 84% 39%;   /* emerald */
+    --chart-3: 37 92% 50%;    /* amber */
+    --chart-4: 0 72% 51%;     /* danger */
+    --chart-5: 218 11% 65%;   /* muted */
+
+    /* Sidebar — SEMPRE escuro */
+    --sidebar:                    232 29% 11%;  /* #141824 */
+    --sidebar-foreground:         215 20% 65%;  /* #94a3b8 */
+    --sidebar-primary:            248 72% 58%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent:             228 27% 16%;  /* #1e2333 */
+    --sidebar-accent-foreground:  210 17% 87%;
+    --sidebar-border:             0 0% 100% / 7%;
+    --sidebar-ring:               248 72% 58%;
+  }
+
+  /* ── Fusion C — Dark Mode ────────────────────── */
+  .dark {
+    --background:            232 29% 9%;
+    --foreground:            210 20% 94%;
+
+    --card:                  232 29% 12%;
+    --card-foreground:       210 20% 94%;
+    --popover:               232 29% 12%;
+    --popover-foreground:    210 20% 94%;
+
+    --primary:               248 60% 68%;
+    --primary-foreground:    222 84% 5%;
+
+    --secondary:             228 27% 18%;
+    --secondary-foreground:  210 17% 87%;
+    --muted:                 228 27% 17%;
+    --muted-foreground:      218 11% 58%;
+
+    --accent:                228 27% 18%;
+    --accent-foreground:     210 17% 87%;
+
+    --destructive:           0 63% 59%;
+    --destructive-foreground:210 40% 98%;
+
+    --border:                0 0% 100% / 10%;
+    --input:                 0 0% 100% / 15%;
+    --ring:                  248 60% 68%;
+
+    --chart-1: 248 60% 68%;
+    --chart-2: 160 70% 50%;
+    --chart-3: 37 85% 60%;
+    --chart-4: 0 63% 59%;
+    --chart-5: 218 11% 58%;
+
+    /* Sidebar ainda mais escura no dark */
+    --sidebar:                    232 29% 8%;
+    --sidebar-foreground:         215 15% 58%;
+    --sidebar-primary:            248 60% 68%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent:             228 27% 13%;
+    --sidebar-accent-foreground:  210 17% 83%;
+    --sidebar-border:             0 0% 100% / 7%;
+    --sidebar-ring:               248 60% 68%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    transition: background-color 0.2s, color 0.2s;
+  }
 }

@@ -14,9 +14,9 @@ const BRAND_BULLETS = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail]     = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
@@ -52,14 +52,14 @@ export default function LoginPage() {
             <h1 className="text-3xl font-bold text-white leading-tight">
               Sistema Integrado de<br />Gestão de Cemitérios
             </h1>
-            <p className="text-primary-300 mt-3 text-base leading-relaxed">
+            <p className="text-primary-300 mt-3 text-white leading-relaxed">
               Plataforma GovTech para administração municipal de cemitérios e serviços funerários.
             </p>
           </div>
 
           <ul className="space-y-3">
             {BRAND_BULLETS.map((text) => (
-              <li key={text} className="flex items-center gap-3 text-primary-200 text-sm">
+              <li key={text} className="flex text-white items-center gap-3 text-primary-200 text-sm">
                 <CheckCircle size={16} className="text-primary-400 shrink-0" />
                 {text}
               </li>
@@ -67,7 +67,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <p className="text-primary-600 text-xs">
+        <p className="text-white text-xs">
           © {new Date().getFullYear()} SIGCEM · Acesso restrito a servidores municipais autorizados
         </p>
       </div>

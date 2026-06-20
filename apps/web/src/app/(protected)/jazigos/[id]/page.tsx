@@ -7,33 +7,22 @@ import { Pencil, RefreshCw, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ChangeStatusDialog } from '@/components/jazigo/change-status-dialog';
 
 const TIPO_LABEL: Record<string, string> = {
-  SINGLE: 'Simples',
-  DOUBLE: 'Duplo',
-  DRAWER: 'Gaveta',
-  OSSUARY: 'Ossário',
-  PERPETUAL: 'Perpétuo',
+  SINGLE: 'Simples', DOUBLE: 'Duplo', DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário', PERPETUAL: 'Perpétuo',
 };
 
 interface GraveHistory {
-  id: string;
-  previousStatus: string;
-  newStatus: string;
-  reason: string | null;
-  userId: string;
-  createdAt: string;
+  id: string; previousStatus: string; newStatus: string;
+  reason: string | null; userId: string; createdAt: string;
 }
 
 interface Jazigo {
-  id: string;
-  code: string;
-  type: string;
-  status: string;
-  locationRef: string | null;
-  notes: string | null;
-  createdAt: string;
+  id: string; code: string; type: string; status: string;
+  locationRef: string | null; notes: string | null; createdAt: string;
   block: { id: string; code: string; cemetery: { id: string; name: string } };
   history: GraveHistory[];
 }
@@ -62,12 +51,9 @@ export default function DetalheJazigoPage() {
   if (loading || !jazigo) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 bg-neutral-100 rounded animate-pulse" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-neutral-200 p-6 h-40 animate-pulse" />
-          ))}
-        </div>
+        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+        <div className="h-10 w-64 bg-muted rounded animate-pulse" />
+        <div className="bg-card rounded-xl border border-border p-6 h-48 animate-pulse" />
       </div>
     );
   }
@@ -87,105 +73,103 @@ export default function DetalheJazigoPage() {
         ]}
         action={
           <div className="flex gap-2">
-            <button
-              onClick={() => setStatusDialogOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50"
-            >
-              <RefreshCw size={15} />
-              Alterar status
+            <button onClick={() => setStatusDialogOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-[600] border border-border rounded-lg hover:bg-muted transition-colors">
+              <RefreshCw size={13} />Alterar status
             </button>
-            <Link
-              href={`/jazigos/${id}/editar`}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700"
-            >
-              <Pencil size={15} />
-              Editar
+            <Link href={`/jazigos/${id}/editar`}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-[12px] font-[600] text-white bg-primary rounded-lg hover:bg-primary/90">
+              <Pencil size={13} />Editar
             </Link>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Informações */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Informações</h2>
-          <dl className="space-y-3">
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Status</dt>
-              <dd className="mt-1"><StatusBadge status={jazigo.status} /></dd>
-            </div>
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Tipo</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{TIPO_LABEL[jazigo.type] ?? jazigo.type}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Quadra</dt>
-              <dd className="mt-1">
-                <Link href={`/quadras/${jazigo.block.id}`} className="text-sm text-primary-600 hover:underline">
-                  Quadra {jazigo.block.code}
-                </Link>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Cemitério</dt>
-              <dd className="mt-1">
-                <Link href={`/cemiterios/${jazigo.block.cemetery.id}`} className="text-sm text-primary-600 hover:underline">
-                  {jazigo.block.cemetery.name}
-                </Link>
-              </dd>
-            </div>
-            {jazigo.locationRef && (
-              <div>
-                <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Localização</dt>
-                <dd className="mt-1 text-sm text-neutral-900">{jazigo.locationRef}</dd>
-              </div>
-            )}
-            {jazigo.notes && (
-              <div>
-                <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Observações</dt>
-                <dd className="mt-1 text-sm text-neutral-600">{jazigo.notes}</dd>
-              </div>
-            )}
-            <div>
-              <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Cadastrado em</dt>
-              <dd className="mt-1 text-sm text-neutral-900">{criadoEm}</dd>
-            </div>
-          </dl>
-        </div>
+      <Tabs defaultValue="info">
+        <TabsList>
+          <TabsTrigger value="info">Informações</TabsTrigger>
+          <TabsTrigger value="history">Histórico ({jazigo.history.length})</TabsTrigger>
+        </TabsList>
 
-        {/* Histórico de status — T-021 */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 p-6">
-          <h2 className="text-sm font-semibold text-neutral-900 mb-4">Histórico de status</h2>
+        <TabsContent value="info" className="mt-4">
+          <div className="bg-card rounded-xl border border-border p-6">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Status</dt>
+                <dd className="mt-1"><StatusBadge status={jazigo.status} /></dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Tipo</dt>
+                <dd className="mt-1 text-[13px] text-foreground">{TIPO_LABEL[jazigo.type] ?? jazigo.type}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Quadra</dt>
+                <dd className="mt-1">
+                  <Link href={`/quadras/${jazigo.block.id}`} className="text-[13px] text-primary hover:underline">
+                    Quadra {jazigo.block.code}
+                  </Link>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Cemitério</dt>
+                <dd className="mt-1">
+                  <Link href={`/cemiterios/${jazigo.block.cemetery.id}`} className="text-[13px] text-primary hover:underline">
+                    {jazigo.block.cemetery.name}
+                  </Link>
+                </dd>
+              </div>
+              {jazigo.locationRef && (
+                <div>
+                  <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Localização</dt>
+                  <dd className="mt-1 text-[13px] text-foreground">{jazigo.locationRef}</dd>
+                </div>
+              )}
+              {jazigo.notes && (
+                <div className="sm:col-span-2">
+                  <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Observações</dt>
+                  <dd className="mt-1 text-[13px] text-muted-foreground">{jazigo.notes}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-[10px] font-[700] uppercase tracking-wider text-muted-foreground">Cadastrado em</dt>
+                <dd className="mt-1 text-[13px] text-foreground">{criadoEm}</dd>
+              </div>
+            </dl>
+          </div>
+        </TabsContent>
 
-          {jazigo.history.length === 0 ? (
-            <p className="text-sm text-neutral-500 text-center py-8">
-              Nenhuma alteração de status registrada.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {jazigo.history.map((h) => {
-                const data = new Date(h.createdAt).toLocaleString('pt-BR', {
-                  day: '2-digit', month: '2-digit', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit',
-                });
-                return (
-                  <div key={h.id} className="flex items-start gap-3 p-3 rounded-lg bg-neutral-50">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <StatusBadge status={h.previousStatus} />
-                      <ArrowRight size={13} className="text-neutral-400 shrink-0" />
-                      <StatusBadge status={h.newStatus} />
-                      {h.reason && (
-                        <span className="text-xs text-neutral-500 truncate ml-1">— {h.reason}</span>
-                      )}
+        <TabsContent value="history" className="mt-4">
+          <div className="bg-card rounded-xl border border-border p-6">
+            {jazigo.history.length === 0 ? (
+              <p className="text-[13px] text-muted-foreground text-center py-8">
+                Nenhuma alteração de status registrada.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {jazigo.history.map((h) => {
+                  const data = new Date(h.createdAt).toLocaleString('pt-BR', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  });
+                  return (
+                    <div key={h.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/40">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <StatusBadge status={h.previousStatus} />
+                        <ArrowRight size={11} className="text-muted-foreground shrink-0" />
+                        <StatusBadge status={h.newStatus} />
+                        {h.reason && (
+                          <span className="text-[11px] text-muted-foreground truncate ml-1">— {h.reason}</span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-muted-foreground/70 shrink-0 whitespace-nowrap">{data}</span>
                     </div>
-                    <span className="text-xs text-neutral-400 shrink-0 whitespace-nowrap">{data}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <ChangeStatusDialog
         open={statusDialogOpen}
