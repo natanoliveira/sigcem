@@ -43,7 +43,7 @@ export default function LoginPage() {
       {/* ── Painel de marca (50% — oculto em mobile) ── */}
       <div className="hidden md:flex md:w-1/2 bg-primary-900 flex-col justify-between p-12 select-none">
         <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="SIGCEM" width={36} height={36} className="rounded-lg" />
+          <Image src="/logo.png" alt="SIGCEM" width={36} height={36} className="rounded-lg" unoptimized />
           <span className="text-white font-bold text-xl tracking-wide">SIGCEM</span>
         </div>
 
@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logo visível apenas em mobile */}
           <div className="md:hidden flex items-center gap-2 mb-8">
-            <Image src="/logo.png" alt="SIGCEM" width={32} height={32} className="rounded-lg" />
+            <Image src="/logo.png" alt="SIGCEM" width={32} height={32} className="rounded-lg" unoptimized />
             <span className="font-bold text-neutral-900">SIGCEM</span>
           </div>
 

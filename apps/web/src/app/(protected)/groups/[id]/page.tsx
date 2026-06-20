@@ -11,17 +11,16 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
 
 interface GroupMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
+  groupId: string;
+  userId: string;
+  user: { id: string; name: string; email: string; role: string };
 }
 
 interface Group {
   id: string;
   name: string;
   description: string | null;
-  status: string;
+  active: boolean;
 }
 
 interface User {
@@ -108,14 +107,14 @@ export default function GroupDetailPage({ params }: Props) {
     if (!removeTarget) return;
     startTransition(async () => {
       try {
-        await api.delete(`/api/v1/groups/${id}/members/${removeTarget.id}`);
+        await api.delete(`/api/v1/groups/${id}/members/${removeTarget.userId}`);
         setRemoveTarget(null);
         fetchMembers();
       } catch {}
     });
   }
 
-  const memberIds = new Set(members.map((m) => m.id));
+  const memberIds = new Set(members.map((m) => m.userId));
   const availableUsers = allUsers.filter((u) => !memberIds.has(u.id));
 
   if (loadingGroup) {
@@ -176,7 +175,7 @@ export default function GroupDetailPage({ params }: Props) {
         <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Status</dt>
-            <dd className="mt-1"><StatusBadge status={group.status} /></dd>
+            <dd className="mt-1"><StatusBadge status={group.active ? 'ACTIVE' : 'INACTIVE'} /></dd>
           </div>
           <div className="sm:col-span-2">
             <dt className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Descrição</dt>
@@ -256,10 +255,10 @@ export default function GroupDetailPage({ params }: Props) {
                 </tr>
               ) : (
                 members.map((m) => (
-                  <tr key={m.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
-                    <td className="px-6 py-3 font-medium text-neutral-900">{m.name}</td>
-                    <td className="px-6 py-3 text-neutral-600">{m.email}</td>
-                    <td className="px-6 py-3 text-neutral-500 text-xs">{m.role}</td>
+                  <tr key={m.userId} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
+                    <td className="px-6 py-3 font-medium text-neutral-900">{m.user.name}</td>
+                    <td className="px-6 py-3 text-neutral-600">{m.user.email}</td>
+                    <td className="px-6 py-3 text-neutral-500 text-xs">{m.user.role}</td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end">
                         <button
@@ -282,7 +281,7 @@ export default function GroupDetailPage({ params }: Props) {
       <ConfirmDialog
         open={!!removeTarget}
         title="Remover membro"
-        description={`Tem certeza que deseja remover "${removeTarget?.name}" do grupo?`}
+        description={`Tem certeza que deseja remover "${removeTarget?.user.name}" do grupo?`}
         confirmLabel="Remover"
         onConfirm={handleRemoveMember}
         onCancel={() => setRemoveTarget(null)}
