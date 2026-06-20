@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
@@ -42,9 +43,7 @@ export default function LoginPage() {
       {/* ── Painel de marca (50% — oculto em mobile) ── */}
       <div className="hidden md:flex md:w-1/2 bg-primary-900 flex-col justify-between p-12 select-none">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-white text-lg font-bold">S</span>
-          </div>
+          <Image src="/logo.png" alt="SIGCEM" width={36} height={36} className="rounded-lg" />
           <span className="text-white font-bold text-xl tracking-wide">SIGCEM</span>
         </div>
 
@@ -78,9 +77,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logo visível apenas em mobile */}
           <div className="md:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">S</span>
-            </div>
+            <Image src="/logo.png" alt="SIGCEM" width={32} height={32} className="rounded-lg" />
             <span className="font-bold text-neutral-900">SIGCEM</span>
           </div>
 

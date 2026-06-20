@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/page-header';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { DocumentList } from '@/components/document/document-list';
 import { EmitCertificateButton } from '@/components/document/emit-certificate-button';
 
@@ -12,6 +13,14 @@ const TIPO_CONFIG: Record<string, { label: string; className: string }> = {
   INHUMATION: { label: 'Inumação', className: 'bg-blue-50 text-blue-700 ring-blue-600/20' },
   EXHUMATION: { label: 'Exumação', className: 'bg-amber-50 text-amber-700 ring-amber-600/20' },
   TRANSFER: { label: 'Translado', className: 'bg-purple-50 text-purple-700 ring-purple-600/20' },
+};
+
+const GRAVE_TYPE_LABEL: Record<string, string> = {
+  SINGLE: 'Simples',
+  DOUBLE: 'Duplo',
+  DRAWER: 'Gaveta',
+  OSSUARY: 'Ossário',
+  PERPETUAL: 'Perpétuo',
 };
 
 async function getBurial(id: string, token: string) {
@@ -119,13 +128,13 @@ export default async function DetalheSepultamentoPage({ params }: Props) {
                   {burial.grave.code}
                 </Link>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-neutral-500">Status atual</span>
-                <span className="font-medium text-neutral-900">{burial.grave.status}</span>
+                <StatusBadge status={burial.grave.status} />
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-500">Tipo</span>
-                <span className="text-neutral-700">{burial.grave.type}</span>
+                <span className="text-neutral-700">{GRAVE_TYPE_LABEL[burial.grave.type] ?? burial.grave.type}</span>
               </div>
             </div>
           </div>

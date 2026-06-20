@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { Bell, User } from 'lucide-react';
 
@@ -9,9 +10,7 @@ export function Header() {
   return (
     <header className="h-14 bg-primary-900 border-b border-primary-800 flex items-center justify-between px-4 shrink-0 z-10">
       <div className="flex items-center gap-3">
-        <div className="w-7 h-7 bg-primary-600 rounded flex items-center justify-center">
-          <span className="text-white text-sm font-bold">S</span>
-        </div>
+        <Image src="/logo.png" alt="SIGCEM" width={28} height={28} className="rounded" />
         <span className="text-white font-semibold text-sm tracking-wide">SIGCEM</span>
         {process.env.NODE_ENV !== 'production' && (
           <span className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded font-medium">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Trash2, ChevronRight, Shield } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -13,18 +13,8 @@ interface Group {
   id: string;
   name: string;
   description: string | null;
-  status: string;
-  membersCount?: number;
-}
-
-interface ApiResponse {
-  data: Group[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  active: boolean;
+  _count?: { members: number };
 }
 
 interface CreateGroupForm {
@@ -35,34 +25,29 @@ interface CreateGroupForm {
 const EMPTY_FORM: CreateGroupForm = { name: '', description: '' };
 
 export default function GroupsPage() {
-  const [result, setResult] = useState<ApiResponse | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<CreateGroupForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const fetchData = useCallback(async () => {
+  function fetchData() {
     setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
-      if (search) params.set('search', search);
-      const data = await api.get(`/api/v1/groups?${params}`);
-      setResult(data);
-    } catch {
-      setResult(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search]);
+    api
+      .get('/api/v1/groups')
+      .then((data) => setGroups(Array.isArray(data) ? (data as Group[]) : []))
+      .catch(() => setGroups([]))
+      .finally(() => setLoading(false));
+  }
 
-  useEffect(() => {
-    const t = setTimeout(fetchData, search ? 400 : 0);
-    return () => clearTimeout(t);
-  }, [fetchData, search]);
+  useEffect(() => { fetchData(); }, []);
+
+  const filtered = groups.filter((g) =>
+    !search || g.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   function handleDelete() {
     if (!deleteTarget) return;
@@ -123,7 +108,7 @@ export default function GroupsPage() {
             <input
               type="text"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome..."
               className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -152,7 +137,7 @@ export default function GroupsPage() {
                     ))}
                   </tr>
                 ))
-              ) : result?.data.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={5}>
                     <EmptyState
@@ -163,15 +148,13 @@ export default function GroupsPage() {
                   </td>
                 </tr>
               ) : (
-                result?.data.map((g) => (
+                filtered.map((g) => (
                   <tr key={g.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-neutral-900">{g.name}</td>
                     <td className="px-4 py-3 text-neutral-600">{g.description ?? '—'}</td>
-                    <td className="px-4 py-3 text-neutral-600">
-                      {g.membersCount != null ? g.membersCount : '—'}
-                    </td>
+                    <td className="px-4 py-3 text-neutral-600">{g._count?.members ?? 0}</td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={g.status} />
+                      <StatusBadge status={g.active ? 'ACTIVE' : 'INACTIVE'} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -197,33 +180,8 @@ export default function GroupsPage() {
             </tbody>
           </table>
         </div>
-
-        {result && result.meta.totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
-            <span>
-              {result.meta.total} grupos — página {result.meta.page} de {result.meta.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(result.meta.totalPages, p + 1))}
-                disabled={page === result.meta.totalPages}
-                className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Próxima
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Modal: Novo Grupo */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />

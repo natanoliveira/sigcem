@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { Plus, Search, UserX, Users2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { PageHeader } from '@/components/ui/page-header';
@@ -30,18 +30,7 @@ interface User {
   name: string;
   email: string;
   role: Role;
-  status: string;
-  groupsCount?: number;
-}
-
-interface ApiResponse {
-  data: User[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  active: boolean;
 }
 
 interface CreateUserForm {
@@ -59,34 +48,32 @@ const EMPTY_FORM: CreateUserForm = {
 };
 
 export default function UsersPage() {
-  const [result, setResult] = useState<ApiResponse | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<CreateUserForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const fetchData = useCallback(async () => {
+  function fetchData() {
     setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
-      if (search) params.set('search', search);
-      const data = await api.get(`/api/v1/iam/users?${params}`);
-      setResult(data);
-    } catch {
-      setResult(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search]);
+    api
+      .get('/api/v1/iam/users')
+      .then((data) => setUsers(Array.isArray(data) ? (data as User[]) : []))
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false));
+  }
 
-  useEffect(() => {
-    const t = setTimeout(fetchData, search ? 400 : 0);
-    return () => clearTimeout(t);
-  }, [fetchData, search]);
+  useEffect(() => { fetchData(); }, []);
+
+  const filtered = users.filter(
+    (u) =>
+      !search ||
+      u.name.toLowerCase().includes(search.toLowerCase()) ||
+      u.email.toLowerCase().includes(search.toLowerCase()),
+  );
 
   function handleDeactivate() {
     if (!deactivateTarget) return;
@@ -147,7 +134,7 @@ export default function UsersPage() {
             <input
               type="text"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome ou e-mail..."
               className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
@@ -162,7 +149,6 @@ export default function UsersPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">E-mail</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Perfil</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">Grupos</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -170,16 +156,16 @@ export default function UsersPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-neutral-50">
-                    {Array.from({ length: 6 }).map((_, j) => (
+                    {Array.from({ length: 5 }).map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 bg-neutral-100 rounded animate-pulse" />
                       </td>
                     ))}
                   </tr>
                 ))
-              ) : result?.data.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={5}>
                     <EmptyState
                       icon={Users2}
                       title={search ? 'Nenhum usuário encontrado para esta busca.' : 'Nenhum usuário cadastrado.'}
@@ -188,7 +174,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : (
-                result?.data.map((u) => (
+                filtered.map((u) => (
                   <tr key={u.id} className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-neutral-900">{u.name}</td>
                     <td className="px-4 py-3 text-neutral-600">{u.email}</td>
@@ -203,10 +189,7 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={u.status} />
-                    </td>
-                    <td className="px-4 py-3 text-neutral-500">
-                      {u.groupsCount != null ? u.groupsCount : '—'}
+                      <StatusBadge status={u.active ? 'ACTIVE' : 'INACTIVE'} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -225,33 +208,8 @@ export default function UsersPage() {
             </tbody>
           </table>
         </div>
-
-        {result && result.meta.totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-neutral-100 flex items-center justify-between text-sm text-neutral-600">
-            <span>
-              {result.meta.total} usuários — página {result.meta.page} de {result.meta.totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Anterior
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(result.meta.totalPages, p + 1))}
-                disabled={page === result.meta.totalPages}
-                className="px-3 py-1 border border-neutral-300 rounded hover:bg-neutral-50 disabled:opacity-40"
-              >
-                Próxima
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Modal: Novo Usuário */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />

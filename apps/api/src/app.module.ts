@@ -19,6 +19,7 @@ import { DocumentModule } from './modules/document/document.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { PublicModule } from './modules/public/public.module';
 import { GroupModule } from './modules/group/group.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { GroupModule } from './modules/group/group.module';
     AuditLogModule,
     PublicModule,
     GroupModule,
+    DashboardModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
